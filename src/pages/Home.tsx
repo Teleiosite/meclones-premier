@@ -1,0 +1,188 @@
+import { Link } from "react-router-dom";
+import { ArrowRight, Award, BookOpen, Users, ShieldCheck, Sparkles, Trophy } from "lucide-react";
+import heroImg from "@/assets/hero-students.jpg";
+import primaryImg from "@/assets/primary.jpg";
+import secondaryImg from "@/assets/secondary.jpg";
+import gradImg from "@/assets/graduation.jpg";
+import CTABanner from "@/components/site/CTABanner";
+
+const stats = [
+  { value: "20", label: "YEARS" },
+  { value: "565", label: "STUDENTS" },
+  { value: "45", label: "TEACHERS" },
+  { value: "100%", label: "EXCELLENCE" },
+];
+
+const values = [
+  { icon: Award, title: "Academic Excellence", desc: "Rigorous curriculum producing top WAEC, NECO and IGCSE results year after year." },
+  { icon: ShieldCheck, title: "Safe Environment", desc: "Secure campus, vetted staff and small class sizes — every child is seen and supported." },
+  { icon: BookOpen, title: "Holistic Learning", desc: "Beyond the classroom — sports, arts, leadership and character formation." },
+  { icon: Users, title: "Expert Teachers", desc: "Trained, passionate educators with deep subject mastery and a love for children." },
+];
+
+const testimonials = [
+  { quote: "My daughter has bloomed at Meclones. The teachers truly care, and her confidence has soared.", name: "Mrs. Adeyemi", role: "Parent · Primary 4" },
+  { quote: "From JSS1 to graduation — Meclones gave my son discipline, vision and a top university place.", name: "Mr. Okafor", role: "Parent · Alumni" },
+  { quote: "The most calm and well-organized school we've experienced. Worth every naira.", name: "Mrs. Bello", role: "Parent · SS2" },
+];
+
+export default function Home() {
+  return (
+    <>
+      {/* HERO */}
+      <section className="bg-cream">
+        <div className="container-page pt-12 md:pt-20 pb-16 grid md:grid-cols-12 gap-10 items-center">
+          <div className="md:col-span-7">
+            <div className="eyebrow mb-5">NURSERY — SS3 · EST. 2003</div>
+            <h1 className="display text-5xl md:text-7xl lg:text-[5.5rem] text-navy">
+              BUILT FOR<br />BRILLIANT<br /><span className="text-gold">MINDS.</span>
+            </h1>
+            <p className="mt-6 text-lg text-navy/70 max-w-md">
+              Two decades. One promise — the highest standard of education in a calm, modern environment for your child.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link to="/primary" className="bg-navy text-white px-7 py-4 font-bold text-sm tracking-wider hover:bg-navy/90 transition inline-flex items-center gap-2">
+                EXPLORE PRIMARY <ArrowRight size={16} />
+              </Link>
+              <Link to="/secondary" className="border-2 border-navy text-navy px-7 py-4 font-bold text-sm tracking-wider hover:bg-navy hover:text-white transition">
+                EXPLORE SECONDARY
+              </Link>
+            </div>
+          </div>
+          <div className="md:col-span-5 grid gap-3">
+            <div className="aspect-[4/3] bg-navy relative overflow-hidden">
+              <img src={heroImg} alt="Meclones students" className="w-full h-full object-cover" />
+              <div className="absolute bottom-4 left-4 text-white">
+                <div className="text-[10px] font-bold tracking-[0.2em] text-gold">RESULTS · 2025</div>
+                <div className="display text-4xl text-white">100%</div>
+                <div className="text-xs text-white/70">WAEC PASS RATE</div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="aspect-square bg-gold p-5 flex flex-col justify-between">
+                <Trophy className="text-navy" size={28} />
+                <div>
+                  <div className="text-[10px] font-bold tracking-[0.2em] text-navy/70">AWARDED</div>
+                  <div className="display text-2xl text-navy leading-tight">Top 10<br />School</div>
+                </div>
+              </div>
+              <div className="aspect-square bg-white border-2 border-navy p-5 flex flex-col justify-between">
+                <Sparkles className="text-navy" size={28} />
+                <div>
+                  <div className="text-[10px] font-bold tracking-[0.2em] text-navy/60">EST.</div>
+                  <div className="display text-4xl text-navy">2003</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* STATS */}
+      <section className="bg-navy text-white">
+        <div className="container-page py-10 grid grid-cols-2 md:grid-cols-4 gap-6">
+          {stats.map((s) => (
+            <div key={s.label} className="border-l-2 border-gold pl-4">
+              <div className="display text-4xl md:text-5xl text-gold">{s.value}</div>
+              <div className="text-[10px] font-bold tracking-[0.25em] text-white/60 mt-1">{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* SCHOOL SELECTOR */}
+      <section className="container-page py-24">
+        <div className="flex justify-between items-end mb-10 flex-wrap gap-4">
+          <div>
+            <div className="eyebrow mb-3">CHOOSE YOUR PATH</div>
+            <h2 className="display text-4xl md:text-5xl text-navy">One school. Two journeys.</h2>
+          </div>
+          <p className="text-navy/60 max-w-sm text-sm">A combined campus designed for continuity — from your child's first steps to their graduation day.</p>
+        </div>
+        <div className="grid md:grid-cols-2 gap-6">
+          {[
+            { img: primaryImg, eyebrow: "NURSERY · PRIMARY 1–6", title: "Primary School", desc: "Where curiosity is born. A nurturing foundation in literacy, numeracy and character.", to: "/primary" },
+            { img: secondaryImg, eyebrow: "JSS 1 · SS 3", title: "Secondary School", desc: "Where ambition takes shape. Rigorous prep for WAEC, NECO, JAMB and beyond.", to: "/secondary" },
+          ].map((c) => (
+            <Link key={c.to} to={c.to} className="group block bg-white border border-navy/10 hover:border-navy transition">
+              <div className="aspect-[16/10] overflow-hidden">
+                <img src={c.img} alt={c.title} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition duration-700" />
+              </div>
+              <div className="p-7">
+                <div className="eyebrow mb-3">{c.eyebrow}</div>
+                <h3 className="display text-3xl text-navy mb-2">{c.title}</h3>
+                <p className="text-navy/60 text-sm mb-5">{c.desc}</p>
+                <div className="inline-flex items-center gap-2 text-navy font-bold text-xs tracking-wider">
+                  EXPLORE <ArrowRight size={14} className="group-hover:translate-x-1 transition" />
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* WHY */}
+      <section className="bg-cream">
+        <div className="container-page py-24">
+          <div className="text-center mb-14">
+            <div className="eyebrow mb-3">WHY MECLONES</div>
+            <h2 className="display text-4xl md:text-5xl text-navy max-w-2xl mx-auto">A school parents trust. A place children love.</h2>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {values.map((v) => (
+              <div key={v.title} className="bg-white p-7 border-t-2 border-gold">
+                <v.icon className="text-navy mb-5" size={28} />
+                <h3 className="font-display font-bold text-xl text-navy mb-2">{v.title}</h3>
+                <p className="text-sm text-navy/60 leading-relaxed">{v.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* GRADUATION FEATURE */}
+      <section className="container-page py-24 grid md:grid-cols-2 gap-12 items-center">
+        <div className="aspect-[4/5] overflow-hidden">
+          <img src={gradImg} alt="Graduation" loading="lazy" className="w-full h-full object-cover" />
+        </div>
+        <div>
+          <div className="eyebrow mb-4">CLASS OF 2025</div>
+          <h2 className="display text-4xl md:text-5xl text-navy mb-6">Every graduate. A future leader.</h2>
+          <p className="text-navy/70 mb-6 leading-relaxed">
+            100% of our SS3 students earned university placement this year — including in the UK, US, Canada and Nigeria's top federal institutions.
+          </p>
+          <div className="grid grid-cols-3 gap-6 py-6 border-y border-navy/10">
+            <div><div className="display text-3xl text-gold">98%</div><div className="text-[10px] font-bold tracking-[0.2em] text-navy/60 mt-1">UNI PLACEMENT</div></div>
+            <div><div className="display text-3xl text-gold">42</div><div className="text-[10px] font-bold tracking-[0.2em] text-navy/60 mt-1">SCHOLARSHIPS</div></div>
+            <div><div className="display text-3xl text-gold">14</div><div className="text-[10px] font-bold tracking-[0.2em] text-navy/60 mt-1">COUNTRIES</div></div>
+          </div>
+          <Link to="/about" className="mt-8 inline-flex items-center gap-2 text-navy font-bold text-sm tracking-wider border-b-2 border-gold pb-1">
+            OUR STORY <ArrowRight size={16} />
+          </Link>
+        </div>
+      </section>
+
+      {/* TESTIMONIALS */}
+      <section className="bg-navy text-white">
+        <div className="container-page py-24">
+          <div className="text-center mb-14">
+            <div className="text-[11px] font-bold tracking-[0.3em] text-gold mb-3">PARENT VOICES</div>
+            <h2 className="display text-4xl md:text-5xl">Trusted by families across Nigeria.</h2>
+          </div>
+          <div className="grid md:grid-cols-3 gap-5">
+            {testimonials.map((t, i) => (
+              <div key={i} className="bg-white/5 border border-white/10 p-7">
+                <div className="text-gold display text-4xl leading-none mb-4">"</div>
+                <p className="text-white/85 leading-relaxed mb-6">{t.quote}</p>
+                <div className="font-bold text-sm">{t.name}</div>
+                <div className="text-xs text-white/50">{t.role}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <CTABanner />
+    </>
+  );
+}
