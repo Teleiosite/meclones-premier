@@ -41,6 +41,12 @@ export default function Navbar() {
         </nav>
         <div className="flex items-center gap-2">
           <Link
+            to="/login"
+            className="hidden sm:inline-flex text-white/80 hover:text-gold px-3 py-2 text-xs font-bold tracking-wider transition"
+          >
+            SIGN IN
+          </Link>
+          <Link
             to="/admissions"
             className="hidden sm:inline-flex bg-gold text-navy px-4 py-2 text-xs font-bold tracking-wider hover:bg-gold/90 transition"
           >
