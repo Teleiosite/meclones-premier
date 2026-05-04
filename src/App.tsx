@@ -12,6 +12,12 @@ import Admissions from "./pages/Admissions";
 import Fees from "./pages/Fees";
 import News from "./pages/News";
 import Contact from "./pages/Contact";
+import Login from "./pages/auth/Login";
+import ForgotPassword from "./pages/auth/ForgotPassword";
+import AdminLayout, { AdminDashboard } from "./pages/dashboard/AdminDashboard";
+import TeacherLayout, { TeacherDashboard } from "./pages/dashboard/TeacherDashboard";
+import StudentLayout, { StudentDashboard } from "./pages/dashboard/StudentDashboard";
+import ParentLayout, { ParentDashboard } from "./pages/dashboard/ParentDashboard";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -33,6 +39,23 @@ const App = () => (
             <Route path="/news" element={<News />} />
             <Route path="/contact" element={<Contact />} />
           </Route>
+
+          <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+
+          <Route path="/dashboard/admin" element={<AdminLayout />}>
+            <Route index element={<AdminDashboard />} />
+          </Route>
+          <Route path="/dashboard/teacher" element={<TeacherLayout />}>
+            <Route index element={<TeacherDashboard />} />
+          </Route>
+          <Route path="/dashboard/student" element={<StudentLayout />}>
+            <Route index element={<StudentDashboard />} />
+          </Route>
+          <Route path="/dashboard/parent" element={<ParentLayout />}>
+            <Route index element={<ParentDashboard />} />
+          </Route>
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
