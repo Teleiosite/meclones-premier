@@ -1,10 +1,41 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Award, BookOpen, Users, ShieldCheck, Sparkles, Trophy } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowRight, Award, BookOpen, Users, ShieldCheck } from "lucide-react";
 import heroImg from "@/assets/hero-students.jpg";
 import primaryImg from "@/assets/primary.jpg";
 import secondaryImg from "@/assets/secondary.jpg";
 import gradImg from "@/assets/graduation.jpg";
 import CTABanner from "@/components/site/CTABanner";
+
+const slides = [
+  {
+    image: heroImg,
+    eyebrow: "NURSERY — SS3 · EST. 2003",
+    titleStart: "BUILT FOR BRILLIANT ",
+    titleAccent: "MINDS.",
+    subtitle: "Two decades. One promise — the highest standard of education in a calm, modern environment for your child.",
+    cta: { label: "EXPLORE PRIMARY", to: "/primary" },
+    secondaryCta: { label: "EXPLORE SECONDARY", to: "/secondary" },
+  },
+  {
+    image: primaryImg,
+    eyebrow: "PRIMARY · AGES 3–11",
+    titleStart: "WHERE CURIOSITY ",
+    titleAccent: "BEGINS.",
+    subtitle: "Small classes, expert teachers and a joyful start that sets the foundation for a lifetime of learning.",
+    cta: { label: "EXPLORE PRIMARY", to: "/primary" },
+    secondaryCta: { label: "BOOK A TOUR", to: "/contact" },
+  },
+  {
+    image: secondaryImg,
+    eyebrow: "SECONDARY · JSS1 — SS3",
+    titleStart: "WHERE AMBITION ",
+    titleAccent: "TAKES SHAPE.",
+    subtitle: "Rigorous prep for WAEC, NECO, JAMB and top universities at home and abroad.",
+    cta: { label: "EXPLORE SECONDARY", to: "/secondary" },
+    secondaryCta: { label: "APPLY NOW", to: "/admissions" },
+  },
+];
 
 const stats = [
   { value: "20", label: "YEARS" },
@@ -27,29 +58,61 @@ const testimonials = [
 ];
 
 export default function Home() {
+  const [active, setActive] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => setActive((a) => (a + 1) % slides.length), 6000);
+    return () => clearInterval(id);
+  }, []);
+
   return (
     <>
-      {/* HERO */}
+      {/* HERO CAROUSEL */}
       <section className="relative bg-cream text-navy overflow-hidden">
-        <div className="absolute inset-0">
-          <img src={heroImg} alt="" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-r from-cream via-cream/90 to-cream/40" />
-        </div>
-        <div className="relative container-page py-20 md:py-32">
-          <div className="eyebrow mb-5">NURSERY — SS3 · EST. 2003</div>
-          <h1 className="display text-5xl md:text-7xl lg:text-[5.5rem] text-navy max-w-3xl leading-[0.95]">
-            BUILT FOR BRILLIANT <span className="text-gold">MINDS.</span>
-          </h1>
-          <p className="mt-6 text-lg text-navy/70 max-w-xl">
-            Two decades. One promise — the highest standard of education in a calm, modern environment for your child.
-          </p>
-          <div className="mt-10 flex flex-wrap gap-3">
-            <Link to="/primary" className="bg-gold text-navy px-7 py-4 font-bold text-sm tracking-wider hover:bg-gold/90 transition inline-flex items-center gap-2">
-              EXPLORE PRIMARY <ArrowRight size={16} />
-            </Link>
-            <Link to="/secondary" className="border-2 border-navy text-navy px-7 py-4 font-bold text-sm tracking-wider hover:bg-navy hover:text-white transition">
-              EXPLORE SECONDARY
-            </Link>
+        {slides.map((s, i) => (
+          <div
+            key={i}
+            className={`absolute inset-0 transition-opacity duration-1000 ${i === active ? "opacity-100" : "opacity-0"}`}
+            aria-hidden={i !== active}
+          >
+            <img src={s.image} alt="" className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-r from-cream via-cream/90 to-cream/40" />
+          </div>
+        ))}
+
+        <div className="relative container-page py-16 md:py-28 min-h-[520px] md:min-h-[600px] flex flex-col justify-center">
+          <div className="relative">
+            {slides.map((s, i) => (
+              <div
+                key={i}
+                className={`transition-opacity duration-700 ${i === active ? "opacity-100 relative" : "opacity-0 pointer-events-none absolute inset-0"}`}
+              >
+                <div className="eyebrow mb-5">{s.eyebrow}</div>
+                <h1 className="display text-4xl sm:text-5xl md:text-7xl lg:text-[5.5rem] text-navy max-w-3xl leading-[0.95]">
+                  {s.titleStart}<span className="text-gold">{s.titleAccent}</span>
+                </h1>
+                <p className="mt-6 text-base md:text-lg text-navy/70 max-w-xl">{s.subtitle}</p>
+                <div className="mt-8 md:mt-10 flex flex-wrap gap-3">
+                  <Link to={s.cta.to} className="bg-gold text-navy px-6 md:px-7 py-3.5 md:py-4 font-bold text-xs md:text-sm tracking-wider hover:bg-gold/90 transition inline-flex items-center gap-2">
+                    {s.cta.label} <ArrowRight size={16} />
+                  </Link>
+                  <Link to={s.secondaryCta.to} className="border-2 border-navy text-navy px-6 md:px-7 py-3.5 md:py-4 font-bold text-xs md:text-sm tracking-wider hover:bg-navy hover:text-white transition">
+                    {s.secondaryCta.label}
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-10 flex gap-2">
+            {slides.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setActive(i)}
+                aria-label={`Slide ${i + 1}`}
+                className={`h-1.5 transition-all ${i === active ? "w-10 bg-navy" : "w-5 bg-navy/30"}`}
+              />
+            ))}
           </div>
         </div>
       </section>
