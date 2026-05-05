@@ -30,50 +30,26 @@ export default function Home() {
   return (
     <>
       {/* HERO */}
-      <section className="bg-cream">
-        <div className="container-page pt-12 md:pt-20 pb-16 grid md:grid-cols-12 gap-10 items-center">
-          <div className="md:col-span-7">
-            <div className="eyebrow mb-5">NURSERY — SS3 · EST. 2003</div>
-            <h1 className="display text-5xl md:text-7xl lg:text-[5.5rem] text-navy">
-              BUILT FOR<br />BRILLIANT<br /><span className="text-gold">MINDS.</span>
-            </h1>
-            <p className="mt-6 text-lg text-navy/70 max-w-md">
-              Two decades. One promise — the highest standard of education in a calm, modern environment for your child.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link to="/primary" className="bg-navy text-white px-7 py-4 font-bold text-sm tracking-wider hover:bg-navy/90 transition inline-flex items-center gap-2">
-                EXPLORE PRIMARY <ArrowRight size={16} />
-              </Link>
-              <Link to="/secondary" className="border-2 border-navy text-navy px-7 py-4 font-bold text-sm tracking-wider hover:bg-navy hover:text-white transition">
-                EXPLORE SECONDARY
-              </Link>
-            </div>
-          </div>
-          <div className="md:col-span-5 grid gap-3">
-            <div className="aspect-[4/3] bg-navy relative overflow-hidden">
-              <img src={heroImg} alt="Meclones students" className="w-full h-full object-cover" />
-              <div className="absolute bottom-4 left-4 text-white">
-                <div className="text-[10px] font-bold tracking-[0.2em] text-gold">RESULTS · 2025</div>
-                <div className="display text-4xl text-white">100%</div>
-                <div className="text-xs text-white/70">WAEC PASS RATE</div>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="aspect-square bg-gold p-5 flex flex-col justify-between">
-                <Trophy className="text-navy" size={28} />
-                <div>
-                  <div className="text-[10px] font-bold tracking-[0.2em] text-navy/70">AWARDED</div>
-                  <div className="display text-2xl text-navy leading-tight">Top 10<br />School</div>
-                </div>
-              </div>
-              <div className="aspect-square bg-white border-2 border-navy p-5 flex flex-col justify-between">
-                <Sparkles className="text-navy" size={28} />
-                <div>
-                  <div className="text-[10px] font-bold tracking-[0.2em] text-navy/60">EST.</div>
-                  <div className="display text-4xl text-navy">2003</div>
-                </div>
-              </div>
-            </div>
+      <section className="relative bg-cream text-navy overflow-hidden">
+        <div className="absolute inset-0">
+          <img src={heroImg} alt="" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-r from-cream via-cream/90 to-cream/40" />
+        </div>
+        <div className="relative container-page py-20 md:py-32">
+          <div className="eyebrow mb-5">NURSERY — SS3 · EST. 2003</div>
+          <h1 className="display text-5xl md:text-7xl lg:text-[5.5rem] text-navy max-w-3xl leading-[0.95]">
+            BUILT FOR BRILLIANT <span className="text-gold">MINDS.</span>
+          </h1>
+          <p className="mt-6 text-lg text-navy/70 max-w-xl">
+            Two decades. One promise — the highest standard of education in a calm, modern environment for your child.
+          </p>
+          <div className="mt-10 flex flex-wrap gap-3">
+            <Link to="/primary" className="bg-gold text-navy px-7 py-4 font-bold text-sm tracking-wider hover:bg-gold/90 transition inline-flex items-center gap-2">
+              EXPLORE PRIMARY <ArrowRight size={16} />
+            </Link>
+            <Link to="/secondary" className="border-2 border-navy text-navy px-7 py-4 font-bold text-sm tracking-wider hover:bg-navy hover:text-white transition">
+              EXPLORE SECONDARY
+            </Link>
           </div>
         </div>
       </section>
