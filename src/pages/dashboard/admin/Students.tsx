@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { Search, Plus, Filter, Download } from "lucide-react";
+import { Search, Plus, Filter, Download, X } from "lucide-react";
+import { toast } from "sonner";
+import { downloadCSV } from "@/lib/csv";
 
 const students = [
   { id: "MC-001", name: "David Okafor", class: "SS 2", gender: "Male", parent: "Mrs. Adeyemi", attendance: 92, avg: 85, status: "Active" },
