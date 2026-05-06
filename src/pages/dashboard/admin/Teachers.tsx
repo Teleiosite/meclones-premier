@@ -56,10 +56,10 @@ export default function AdminTeachers() {
           <p className="text-muted-foreground text-sm">Manage teaching staff across all departments.</p>
         </div>
         <div className="flex gap-2">
-          <button className="flex items-center gap-2 border border-navy text-navy px-4 py-2 text-xs font-bold tracking-wider hover:bg-navy hover:text-gold transition">
+          <button onClick={exportCsv} className="flex items-center gap-2 border border-navy text-navy px-4 py-2 text-xs font-bold tracking-wider hover:bg-navy hover:text-gold transition">
             <Download size={14} /> EXPORT
           </button>
-          <button className="flex items-center gap-2 bg-navy text-gold px-4 py-2 text-xs font-bold tracking-wider hover:bg-navy/90 transition">
+          <button onClick={() => setShowAdd(true)} className="flex items-center gap-2 bg-navy text-gold px-4 py-2 text-xs font-bold tracking-wider hover:bg-navy/90 transition">
             <Plus size={14} /> ADD TEACHER
           </button>
         </div>
