@@ -77,7 +77,7 @@ export function TeacherDashboard() {
                     <div className="h-1 bg-secondary"><div className="h-full bg-emerald-500" style={{ width: `${c.attendance}%` }} /></div>
                     <div className="flex justify-between mt-2"><span className="text-muted-foreground">Avg. Score</span><span className="font-bold text-navy">{c.score}%</span></div>
                   </div>
-                  <button className={`w-full mt-3 ${c.color} text-white py-2 text-xs font-bold tracking-wider`}>VIEW CLASS</button>
+                  <button onClick={() => navigate("/dashboard/teacher/classes")} className={`w-full mt-3 ${c.color} text-white py-2 text-xs font-bold tracking-wider hover:opacity-90`}>VIEW CLASS</button>
                 </div>
               ))}
             </div>
