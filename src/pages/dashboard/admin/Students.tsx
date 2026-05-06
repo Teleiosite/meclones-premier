@@ -3,7 +3,9 @@ import { Search, Plus, Filter, Download, X } from "lucide-react";
 import { toast } from "sonner";
 import { downloadCSV } from "@/lib/csv";
 
-const students = [
+type Student = { id: string; name: string; class: string; gender: string; parent: string; attendance: number; avg: number; status: string };
+
+const students: Student[] = [
   { id: "MC-001", name: "David Okafor", class: "SS 2", gender: "Male", parent: "Mrs. Adeyemi", attendance: 92, avg: 85, status: "Active" },
   { id: "MC-002", name: "Grace Okafor", class: "Primary 5", gender: "Female", parent: "Mrs. Adeyemi", attendance: 96, avg: 89, status: "Active" },
   { id: "MC-003", name: "Chinedu Paul", class: "Primary 3", gender: "Male", parent: "Mr. Paul", attendance: 88, avg: 76, status: "Active" },
