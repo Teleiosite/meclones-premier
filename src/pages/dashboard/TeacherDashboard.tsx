@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import StatCard from "@/components/dashboard/StatCard";
 import {
@@ -40,6 +41,7 @@ const schedule = [
 ];
 
 export function TeacherDashboard() {
+  const navigate = useNavigate();
   return (
     <div className="space-y-6">
       <div>
@@ -75,7 +77,7 @@ export function TeacherDashboard() {
                     <div className="h-1 bg-secondary"><div className="h-full bg-emerald-500" style={{ width: `${c.attendance}%` }} /></div>
                     <div className="flex justify-between mt-2"><span className="text-muted-foreground">Avg. Score</span><span className="font-bold text-navy">{c.score}%</span></div>
                   </div>
-                  <button className={`w-full mt-3 ${c.color} text-white py-2 text-xs font-bold tracking-wider`}>VIEW CLASS</button>
+                  <button onClick={() => navigate("/dashboard/teacher/classes")} className={`w-full mt-3 ${c.color} text-white py-2 text-xs font-bold tracking-wider hover:opacity-90`}>VIEW CLASS</button>
                 </div>
               ))}
             </div>
@@ -106,7 +108,7 @@ export function TeacherDashboard() {
                       <td>{r[1]}</td>
                       <td>{r[2]}</td>
                       <td>{r[3]}</td>
-                      <td className="text-right"><button className="bg-navy text-gold px-3 py-1 text-xs font-bold">GRADE</button></td>
+                      <td className="text-right"><button onClick={() => navigate("/dashboard/teacher/assignments")} className="bg-navy text-gold px-3 py-1 text-xs font-bold hover:bg-navy/90">GRADE</button></td>
                     </tr>
                   ))}
                 </tbody>
@@ -140,10 +142,10 @@ export function TeacherDashboard() {
           <div className="bg-white border border-border p-5">
             <h3 className="font-bold text-navy mb-4">Quick Actions</h3>
             <div className="grid grid-cols-2 gap-2">
-              <button className="border border-navy text-navy py-2.5 text-xs font-bold tracking-wider flex items-center justify-center gap-1"><CheckCircle2 size={14} />ATTEND.</button>
-              <button className="border border-navy text-navy py-2.5 text-xs font-bold tracking-wider flex items-center justify-center gap-1"><FileEdit size={14} />ASSIGN</button>
-              <button className="border border-navy text-navy py-2.5 text-xs font-bold tracking-wider flex items-center justify-center gap-1"><Award size={14} />GRADES</button>
-              <button className="border border-navy text-navy py-2.5 text-xs font-bold tracking-wider flex items-center justify-center gap-1"><Megaphone size={14} />NOTICE</button>
+              <button onClick={() => navigate("/dashboard/teacher/attendance")} className="border border-navy text-navy py-2.5 text-xs font-bold tracking-wider flex items-center justify-center gap-1 hover:bg-navy hover:text-gold"><CheckCircle2 size={14} />ATTEND.</button>
+              <button onClick={() => navigate("/dashboard/teacher/assignments")} className="border border-navy text-navy py-2.5 text-xs font-bold tracking-wider flex items-center justify-center gap-1 hover:bg-navy hover:text-gold"><FileEdit size={14} />ASSIGN</button>
+              <button onClick={() => navigate("/dashboard/teacher/exams")} className="border border-navy text-navy py-2.5 text-xs font-bold tracking-wider flex items-center justify-center gap-1 hover:bg-navy hover:text-gold"><Award size={14} />GRADES</button>
+              <button onClick={() => navigate("/dashboard/teacher/messages")} className="border border-navy text-navy py-2.5 text-xs font-bold tracking-wider flex items-center justify-center gap-1 hover:bg-navy hover:text-gold"><Megaphone size={14} />NOTICE</button>
             </div>
           </div>
 

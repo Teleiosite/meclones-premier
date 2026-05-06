@@ -1,4 +1,6 @@
 import { Download } from "lucide-react";
+import { toast } from "sonner";
+import { downloadCSV } from "@/lib/csv";
 
 const classPerf = [
   { class: "JSS 1A", students: 24, avg: 78, pass: 22, fail: 2, top: "Bola Ade — 91%" },
@@ -23,7 +25,7 @@ export default function TeacherReports() {
           <h1 className="font-display text-3xl font-black text-navy">Reports</h1>
           <p className="text-muted-foreground text-sm">Performance summary across all your classes — Term 2, 2026.</p>
         </div>
-        <button className="flex items-center gap-2 border border-navy text-navy px-4 py-2 text-xs font-bold tracking-wider hover:bg-navy hover:text-gold transition">
+        <button onClick={() => { downloadCSV("teacher-report.csv", [["Class", "Students", "Avg", "Pass", "Fail", "Top"], ...classPerf.map((c) => [c.class, c.students, `${c.avg}%`, c.pass, c.fail, c.top])]); toast.success("Report exported."); }} className="flex items-center gap-2 border border-navy text-navy px-4 py-2 text-xs font-bold tracking-wider hover:bg-navy hover:text-gold transition">
           <Download size={14} /> EXPORT REPORT
         </button>
       </div>

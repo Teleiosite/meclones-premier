@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { BookOpen, Users, BarChart3 } from "lucide-react";
 
 const classes = [
@@ -9,6 +10,7 @@ const classes = [
 ];
 
 export default function TeacherClasses() {
+  const navigate = useNavigate();
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
@@ -68,7 +70,7 @@ export default function TeacherClasses() {
                 <div className="text-xs text-muted-foreground">
                   <span className="font-bold text-navy">Next: </span>{c.nextClass}
                 </div>
-                <button className={`${c.color} text-white text-xs font-bold px-4 py-2 hover:opacity-90 transition`}>
+                <button onClick={() => navigate("/dashboard/teacher/students")} className={`${c.color} text-white text-xs font-bold px-4 py-2 hover:opacity-90 transition`}>
                   VIEW CLASS
                 </button>
               </div>

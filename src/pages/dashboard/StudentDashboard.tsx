@@ -1,3 +1,4 @@
+import { Link, useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import StatCard from "@/components/dashboard/StatCard";
 import {
@@ -32,6 +33,7 @@ const courses = [
 ];
 
 export function StudentDashboard() {
+  const navigate = useNavigate();
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
   const scores = [40, 55, 65, 60, 70, 85];
 
@@ -97,7 +99,7 @@ export function StudentDashboard() {
           <div className="bg-white border border-border p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-navy">My Courses</h3>
-              <a className="text-xs text-navy font-semibold">View All</a>
+              <Link to="/dashboard/student/courses" className="text-xs text-navy font-semibold hover:text-gold">View All</Link>
             </div>
             <div className="grid sm:grid-cols-2 gap-3">
               {courses.map((c, i) => (
@@ -165,7 +167,7 @@ export function StudentDashboard() {
           <div className="bg-white border border-border p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-navy">Upcoming Schedule</h3>
-              <a className="text-xs text-navy font-semibold">Timetable</a>
+              <Link to="/dashboard/student/timetable" className="text-xs text-navy font-semibold hover:text-gold">Timetable</Link>
             </div>
             <div className="text-xs text-muted-foreground mb-3">Today · May 29</div>
             <div className="space-y-3 text-sm">
@@ -205,10 +207,10 @@ export function StudentDashboard() {
           <div className="bg-white border border-border p-5">
             <h3 className="font-bold text-navy mb-3">Quick Links</h3>
             <div className="grid grid-cols-2 gap-2">
-              <button className="border border-navy text-navy py-2.5 text-xs font-bold tracking-wider flex items-center justify-center gap-1"><Download size={14} />MATERIALS</button>
-              <button className="border border-navy text-navy py-2.5 text-xs font-bold tracking-wider flex items-center justify-center gap-1"><Upload size={14} />SUBMIT</button>
-              <button className="border border-navy text-navy py-2.5 text-xs font-bold tracking-wider flex items-center justify-center gap-1"><Calendar size={14} />EXAMS</button>
-              <button className="border border-navy text-navy py-2.5 text-xs font-bold tracking-wider flex items-center justify-center gap-1"><CreditCard size={14} />FEES</button>
+              <button onClick={() => navigate("/dashboard/student/resources")} className="border border-navy text-navy py-2.5 text-xs font-bold tracking-wider flex items-center justify-center gap-1 hover:bg-navy hover:text-gold"><Download size={14} />MATERIALS</button>
+              <button onClick={() => navigate("/dashboard/student/assignments")} className="border border-navy text-navy py-2.5 text-xs font-bold tracking-wider flex items-center justify-center gap-1 hover:bg-navy hover:text-gold"><Upload size={14} />SUBMIT</button>
+              <button onClick={() => navigate("/dashboard/student/results")} className="border border-navy text-navy py-2.5 text-xs font-bold tracking-wider flex items-center justify-center gap-1 hover:bg-navy hover:text-gold"><Calendar size={14} />EXAMS</button>
+              <button onClick={() => navigate("/fees")} className="border border-navy text-navy py-2.5 text-xs font-bold tracking-wider flex items-center justify-center gap-1 hover:bg-navy hover:text-gold"><CreditCard size={14} />FEES</button>
             </div>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { CheckCircle2, XCircle } from "lucide-react";
+import { toast } from "sonner";
 
 const classes = ["Primary 3A", "Primary 5A", "JSS 1A", "JSS 2B", "SS 1A", "SS 2B"];
 
@@ -79,7 +80,7 @@ export default function AdminAttendance() {
             </button>
           ))}
         </div>
-        <button className="mt-5 bg-navy text-gold px-6 py-3 text-xs font-bold tracking-wider hover:bg-navy/90 transition">SAVE ATTENDANCE →</button>
+        <button onClick={() => toast.success(`Saved: ${presentCount} present, ${students.length - presentCount} absent in ${selectedClass}.`)} className="mt-5 bg-navy text-gold px-6 py-3 text-xs font-bold tracking-wider hover:bg-navy/90 transition">SAVE ATTENDANCE →</button>
       </div>
     </div>
   );

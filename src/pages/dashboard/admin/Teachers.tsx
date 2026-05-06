@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { Search, Plus, Download } from "lucide-react";
+import { Search, Plus, Download, X } from "lucide-react";
+import { toast } from "sonner";
+import { downloadCSV } from "@/lib/csv";
 
 const teachers = [
   { id: "T-001", name: "Mr. Daniel Marko", subject: "Mathematics", classes: ["JSS 1A", "JSS 2B", "SS 1A"], type: "Secondary", experience: "8 yrs", status: "Active" },
@@ -12,15 +14,39 @@ const teachers = [
   { id: "T-008", name: "Mrs. Funke Okonkwo", subject: "Primary Class Teacher", classes: ["Primary 1A", "Primary 1B"], type: "Primary", experience: "9 yrs", status: "On Leave" },
 ];
 
+type Teacher = typeof teachers[0];
+
 export default function AdminTeachers() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("All");
+  const [items, setItems] = useState(teachers);
+  const [viewing, setViewing] = useState<Teacher | null>(null);
+  const [showAdd, setShowAdd] = useState(false);
+  const [form, setForm] = useState({ name: "", subject: "", type: "Secondary", experience: "1 yrs" });
 
-  const filtered = teachers.filter((t) => {
+  const filtered = items.filter((t) => {
     const matchSearch = t.name.toLowerCase().includes(search.toLowerCase()) || t.subject.toLowerCase().includes(search.toLowerCase());
     const matchType = typeFilter === "All" || t.type === typeFilter;
     return matchSearch && matchType;
   });
+
+  const exportCsv = () => {
+    downloadCSV("teachers.csv", [
+      ["ID", "Name", "Subject", "Classes", "Section", "Experience", "Status"],
+      ...filtered.map((t) => [t.id, t.name, t.subject, t.classes.join("; "), t.type, t.experience, t.status]),
+    ]);
+    toast.success(`Exported ${filtered.length} teachers.`);
+  };
+
+  const addTeacher = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.name.trim()) return;
+    const id = `T-${String(items.length + 1).padStart(3, "0")}`;
+    setItems((p) => [{ id, ...form, classes: [], status: "Active" }, ...p]);
+    toast.success(`${form.name} added.`);
+    setForm({ name: "", subject: "", type: "Secondary", experience: "1 yrs" });
+    setShowAdd(false);
+  };
 
   return (
     <div className="space-y-6">
@@ -30,10 +56,10 @@ export default function AdminTeachers() {
           <p className="text-muted-foreground text-sm">Manage teaching staff across all departments.</p>
         </div>
         <div className="flex gap-2">
-          <button className="flex items-center gap-2 border border-navy text-navy px-4 py-2 text-xs font-bold tracking-wider hover:bg-navy hover:text-gold transition">
+          <button onClick={exportCsv} className="flex items-center gap-2 border border-navy text-navy px-4 py-2 text-xs font-bold tracking-wider hover:bg-navy hover:text-gold transition">
             <Download size={14} /> EXPORT
           </button>
-          <button className="flex items-center gap-2 bg-navy text-gold px-4 py-2 text-xs font-bold tracking-wider hover:bg-navy/90 transition">
+          <button onClick={() => setShowAdd(true)} className="flex items-center gap-2 bg-navy text-gold px-4 py-2 text-xs font-bold tracking-wider hover:bg-navy/90 transition">
             <Plus size={14} /> ADD TEACHER
           </button>
         </div>
@@ -109,13 +135,50 @@ export default function AdminTeachers() {
                   </span>
                 </td>
                 <td className="px-5 py-4 text-right">
-                  <button className="text-xs font-bold text-navy hover:text-gold transition">VIEW</button>
+                  <button onClick={() => setViewing(t)} className="text-xs font-bold text-navy hover:text-gold transition">VIEW</button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {showAdd && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowAdd(false)}>
+          <form onSubmit={addTeacher} onClick={(e) => e.stopPropagation()} className="bg-white p-6 w-full max-w-md space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-display text-xl font-black text-navy">Add Teacher</h3>
+              <button type="button" onClick={() => setShowAdd(false)}><X size={18} /></button>
+            </div>
+            <input required placeholder="Full name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full border border-border px-3 py-2 text-sm" />
+            <input required placeholder="Subject" value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} className="w-full border border-border px-3 py-2 text-sm" />
+            <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} className="w-full border border-border px-3 py-2 text-sm bg-white">
+              <option>Primary</option><option>Secondary</option>
+            </select>
+            <input placeholder="Experience (e.g. 5 yrs)" value={form.experience} onChange={(e) => setForm({ ...form, experience: e.target.value })} className="w-full border border-border px-3 py-2 text-sm" />
+            <button type="submit" className="w-full bg-navy text-gold py-3 font-bold text-xs tracking-wider">SAVE TEACHER</button>
+          </form>
+        </div>
+      )}
+
+      {viewing && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setViewing(null)}>
+          <div onClick={(e) => e.stopPropagation()} className="bg-white p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-display text-xl font-black text-navy">{viewing.name}</h3>
+              <button onClick={() => setViewing(null)}><X size={18} /></button>
+            </div>
+            <dl className="text-sm space-y-2 text-navy">
+              <div className="flex justify-between"><dt className="text-muted-foreground">ID</dt><dd className="font-mono">{viewing.id}</dd></div>
+              <div className="flex justify-between"><dt className="text-muted-foreground">Subject</dt><dd>{viewing.subject}</dd></div>
+              <div className="flex justify-between"><dt className="text-muted-foreground">Section</dt><dd>{viewing.type}</dd></div>
+              <div className="flex justify-between"><dt className="text-muted-foreground">Experience</dt><dd>{viewing.experience}</dd></div>
+              <div className="flex justify-between"><dt className="text-muted-foreground">Status</dt><dd>{viewing.status}</dd></div>
+              <div><dt className="text-muted-foreground mb-1">Classes</dt><dd className="flex flex-wrap gap-1">{viewing.classes.map((c) => <span key={c} className="text-[10px] bg-navy/10 text-navy px-2 py-0.5 font-bold">{c}</span>)}</dd></div>
+            </dl>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

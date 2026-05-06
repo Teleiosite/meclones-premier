@@ -1,3 +1,4 @@
+import { Link, useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import StatCard from "@/components/dashboard/StatCard";
 import {
@@ -22,6 +23,7 @@ export default function AdminLayout() {
 }
 
 export function AdminDashboard() {
+  const navigate = useNavigate();
   const months = ["May 1", "May 8", "May 15", "May 22", "May 29"];
   const attendance = [62, 70, 74, 80, 92];
   const fees = [55, 70, 110, 90, 130, 95, 120, 80, 75, 160, 130, 140];
@@ -121,7 +123,7 @@ export function AdminDashboard() {
           <div className="bg-white border border-border p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-navy">Pending Admissions</h3>
-              <a className="text-xs text-navy font-semibold">View All</a>
+              <Link to="/dashboard/admin/admissions" className="text-xs text-navy font-semibold hover:text-gold">View All</Link>
             </div>
             <div className="space-y-3">
               {pending.map((p, i) => (
@@ -133,9 +135,9 @@ export function AdminDashboard() {
                     <div className="font-semibold text-navy">{p.name}</div>
                     <div className="text-[11px] text-muted-foreground">{p.grade} · {p.date}</div>
                   </div>
-                  <button className="text-xs font-bold tracking-wider text-navy border border-navy px-3 py-1 hover:bg-navy hover:text-gold">
+                  <Link to="/dashboard/admin/admissions" className="text-xs font-bold tracking-wider text-navy border border-navy px-3 py-1 hover:bg-navy hover:text-gold">
                     VIEW
-                  </button>
+                  </Link>
                 </div>
               ))}
             </div>
@@ -163,7 +165,7 @@ export function AdminDashboard() {
           <div className="bg-white border border-border p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-navy">My Classes</h3>
-              <a className="text-xs text-navy font-semibold">View All</a>
+              <Link to="/dashboard/admin/academics" className="text-xs text-navy font-semibold hover:text-gold">View All</Link>
             </div>
             <div className="space-y-4">
               {classes.map((c, i) => (
@@ -184,10 +186,10 @@ export function AdminDashboard() {
           <div className="bg-white border border-border p-5">
             <h3 className="font-bold text-navy mb-4">Quick Actions</h3>
             <div className="grid grid-cols-2 gap-2">
-              <button className="bg-navy text-gold py-2.5 text-xs font-bold tracking-wider">ADD STUDENT</button>
-              <button className="bg-navy text-gold py-2.5 text-xs font-bold tracking-wider">NEW REPORT</button>
-              <button className="border border-navy text-navy py-2.5 text-xs font-bold tracking-wider">ATTENDANCE</button>
-              <button className="border border-navy text-navy py-2.5 text-xs font-bold tracking-wider">SEND NOTICE</button>
+              <button onClick={() => navigate("/dashboard/admin/students")} className="bg-navy text-gold py-2.5 text-xs font-bold tracking-wider hover:bg-navy/90">ADD STUDENT</button>
+              <button onClick={() => navigate("/dashboard/admin/academics")} className="bg-navy text-gold py-2.5 text-xs font-bold tracking-wider hover:bg-navy/90">NEW REPORT</button>
+              <button onClick={() => navigate("/dashboard/admin/attendance")} className="border border-navy text-navy py-2.5 text-xs font-bold tracking-wider hover:bg-navy hover:text-gold">ATTENDANCE</button>
+              <button onClick={() => navigate("/dashboard/admin/announcements")} className="border border-navy text-navy py-2.5 text-xs font-bold tracking-wider hover:bg-navy hover:text-gold">SEND NOTICE</button>
             </div>
           </div>
         </div>

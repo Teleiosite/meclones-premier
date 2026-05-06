@@ -1,3 +1,5 @@
+import { Link, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import StatCard from "@/components/dashboard/StatCard";
 import {
@@ -28,6 +30,7 @@ const children = [
 ];
 
 export function ParentDashboard() {
+  const navigate = useNavigate();
   return (
     <div className="space-y-6">
       <div>
@@ -68,7 +71,7 @@ export function ParentDashboard() {
                       <div className="font-bold text-navy">{c.average}%</div>
                     </div>
                   </div>
-                  <button className={`w-full mt-3 ${c.color} text-white py-2 text-xs font-bold tracking-wider`}>VIEW DETAILS</button>
+                  <button onClick={() => navigate("/dashboard/parent/children")} className={`w-full mt-3 ${c.color} text-white py-2 text-xs font-bold tracking-wider hover:opacity-90`}>VIEW DETAILS</button>
                 </div>
               ))}
             </div>
@@ -77,7 +80,7 @@ export function ParentDashboard() {
           <div className="bg-white border border-border p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-navy">Recent Results</h3>
-              <a className="text-xs text-navy font-semibold">View All</a>
+              <Link to="/dashboard/parent/results" className="text-xs text-navy font-semibold hover:text-gold">View All</Link>
             </div>
             <div className="space-y-3 text-sm">
               {[
@@ -138,7 +141,7 @@ export function ParentDashboard() {
             <p className="eyebrow text-gold mb-2">Next Payment</p>
             <div className="font-display text-3xl font-black">₦750,000</div>
             <div className="text-white/70 text-sm mt-1">Term 3 Tuition · Due Sep 5</div>
-            <button className="w-full mt-4 bg-gold text-navy py-3 font-bold tracking-wider text-sm">PAY NOW →</button>
+            <button onClick={() => navigate("/dashboard/parent/fees")} className="w-full mt-4 bg-gold text-navy py-3 font-bold tracking-wider text-sm hover:bg-gold/90">PAY NOW →</button>
           </div>
 
           <div className="bg-white border border-border p-5">

@@ -1,5 +1,7 @@
 import { Wallet, CreditCard, TrendingUp, AlertCircle } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
+import { toast } from "sonner";
+import { downloadCSV } from "@/lib/csv";
 
 const payments = [
   { name: "Mrs. Adeyemi", child: "David Okafor", class: "SS 2", term: "Term 2", amount: "₦850,000", date: "May 12", method: "Card", status: "Paid" },
@@ -56,7 +58,7 @@ export default function AdminFees() {
       <div className="bg-white border border-border overflow-x-auto">
         <div className="px-5 py-4 border-b border-border flex items-center justify-between">
           <h3 className="font-bold text-navy">Payment Records — Term 2, 2026</h3>
-          <button className="text-xs font-bold text-navy border border-navy px-4 py-2 hover:bg-navy hover:text-gold transition">EXPORT</button>
+          <button onClick={() => { downloadCSV("fees-term2.csv", [["Student", "Parent", "Class", "Term", "Amount", "Date", "Method", "Status"], ...payments.map((p) => [p.child, p.name, p.class, p.term, p.amount, p.date, p.method, p.status])]); toast.success("Payments exported."); }} className="text-xs font-bold text-navy border border-navy px-4 py-2 hover:bg-navy hover:text-gold transition">EXPORT</button>
         </div>
         <table className="w-full text-sm">
           <thead className="border-b border-border bg-secondary/40">
@@ -83,7 +85,7 @@ export default function AdminFees() {
                 </td>
                 <td className="px-5 py-4">
                   {p.status !== "Paid" && (
-                    <button className="text-xs font-bold bg-gold text-navy px-3 py-1 hover:bg-gold/80 transition">REMIND</button>
+                    <button onClick={() => toast.success(`Reminder sent to ${p.name}.`)} className="text-xs font-bold bg-gold text-navy px-3 py-1 hover:bg-gold/80 transition">REMIND</button>
                   )}
                 </td>
               </tr>

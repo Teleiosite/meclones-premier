@@ -75,7 +75,7 @@ export default function TeacherAssignments() {
             </div>
             <div className="flex items-center gap-3">
               <span className={`text-[10px] font-bold px-2 py-1 ${a.status === "Active" ? "bg-emerald-100 text-emerald-700" : "bg-secondary text-muted-foreground"}`}>{a.status}</span>
-              <button className="bg-navy text-gold px-3 py-1.5 text-xs font-bold hover:bg-navy/90 transition">GRADE</button>
+              <button onClick={() => toast.success(`Opening grading for "${a.title}"...`)} className="bg-navy text-gold px-3 py-1.5 text-xs font-bold hover:bg-navy/90 transition">GRADE</button>
             </div>
           </div>
         ))}

@@ -73,7 +73,7 @@ export default function TeacherSettings() {
           <button type="submit" className="bg-navy text-gold px-8 py-3 font-bold text-xs tracking-wider hover:bg-navy/90 transition">
             SAVE CHANGES
           </button>
-          <button type="button" className="border border-navy text-navy px-6 py-3 font-bold text-xs tracking-wider hover:bg-secondary transition">
+          <button type="reset" className="border border-navy text-navy px-6 py-3 font-bold text-xs tracking-wider hover:bg-secondary transition">
             CANCEL
           </button>
         </div>
