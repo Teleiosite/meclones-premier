@@ -1,4 +1,5 @@
 import { Download, FileText, BookOpen, Video, Link } from "lucide-react";
+import { toast } from "sonner";
 
 const resources = [
   { title: "SS 2 Mathematics — Past Questions (2020–2024)", subject: "Mathematics", type: "PDF", size: "2.4 MB", date: "May 20", icon: FileText, color: "text-navy" },
