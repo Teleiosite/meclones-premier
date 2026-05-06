@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Search, Plus, Download, X } from "lucide-react";
 import { toast } from "sonner";
 import { downloadCSV } from "@/lib/csv";
+import { useStore } from "@/store";
 
 const teachers = [
   { id: "T-001", name: "Mr. Daniel Marko", subject: "Mathematics", classes: ["JSS 1A", "JSS 2B", "SS 1A"], type: "Secondary", experience: "8 yrs", status: "Active" },
@@ -17,12 +18,20 @@ const teachers = [
 type Teacher = typeof teachers[0];
 
 export default function AdminTeachers() {
+  const { attendance } = useStore();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("All");
   const [items, setItems] = useState(teachers);
   const [viewing, setViewing] = useState<Teacher | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ name: "", subject: "", type: "Secondary", experience: "1 yrs" });
+
+  const getLiveStatus = (id: string, defaultStatus: string) => {
+    if (attendance[id]) {
+      return attendance[id].isClockedIn ? `Clocked In (${attendance[id].lastActionTime})` : `Clocked Out (${attendance[id].lastActionTime || 'Today'})`;
+    }
+    return defaultStatus;
+  };
 
   const filtered = items.filter((t) => {
     const matchSearch = t.name.toLowerCase().includes(search.toLowerCase()) || t.subject.toLowerCase().includes(search.toLowerCase());
@@ -130,8 +139,8 @@ export default function AdminTeachers() {
                 <td className="px-5 py-4">{t.type}</td>
                 <td className="px-5 py-4 text-muted-foreground">{t.experience}</td>
                 <td className="px-5 py-4">
-                  <span className={`text-[10px] font-bold px-2 py-1 ${t.status === "Active" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
-                    {t.status}
+                  <span className={`text-[10px] font-bold px-2 py-1 ${getLiveStatus(t.id, t.status).includes("Clocked In") || t.status === "Active" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+                    {getLiveStatus(t.id, t.status)}
                   </span>
                 </td>
                 <td className="px-5 py-4 text-right">
@@ -173,7 +182,7 @@ export default function AdminTeachers() {
               <div className="flex justify-between"><dt className="text-muted-foreground">Subject</dt><dd>{viewing.subject}</dd></div>
               <div className="flex justify-between"><dt className="text-muted-foreground">Section</dt><dd>{viewing.type}</dd></div>
               <div className="flex justify-between"><dt className="text-muted-foreground">Experience</dt><dd>{viewing.experience}</dd></div>
-              <div className="flex justify-between"><dt className="text-muted-foreground">Status</dt><dd>{viewing.status}</dd></div>
+              <div className="flex justify-between"><dt className="text-muted-foreground">Status</dt><dd>{getLiveStatus(viewing.id, viewing.status)}</dd></div>
               <div><dt className="text-muted-foreground mb-1">Classes</dt><dd className="flex flex-wrap gap-1">{viewing.classes.map((c) => <span key={c} className="text-[10px] bg-navy/10 text-navy px-2 py-0.5 font-bold">{c}</span>)}</dd></div>
             </dl>
           </div>

@@ -28,6 +28,7 @@ import AdminFees from "./pages/dashboard/admin/Fees";
 import AdminAttendance from "./pages/dashboard/admin/Attendance";
 import AdminAcademics from "./pages/dashboard/admin/Academics";
 import AdminAnnouncements from "./pages/dashboard/admin/Announcements";
+import AdminTimetable from "./pages/dashboard/admin/Timetable";
 
 // Teacher sub-pages
 import TeacherClasses from "./pages/dashboard/teacher/Classes";
@@ -95,6 +96,7 @@ const App = () => (
             <Route path="fees" element={<AdminFees />} />
             <Route path="attendance" element={<AdminAttendance />} />
             <Route path="academics" element={<AdminAcademics />} />
+            <Route path="timetable" element={<AdminTimetable />} />
             <Route path="announcements" element={<AdminAnnouncements />} />
           </Route>
 

@@ -3,8 +3,8 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import StatCard from "@/components/dashboard/StatCard";
 import {
   LayoutDashboard, Users, GraduationCap, UserCog, FileText,
-  CreditCard, BookOpen, ClipboardList, Calendar, BarChart3, Settings,
-  Wallet, ShieldCheck, TrendingUp,
+  Banknote, CalendarCheck, BookOpenCheck, Megaphone, Calendar,
+  ShieldCheck, Wallet, TrendingUp,
 } from "lucide-react";
 
 const nav = [
@@ -12,10 +12,11 @@ const nav = [
   { to: "/dashboard/admin/students", label: "Students", icon: <GraduationCap size={18} /> },
   { to: "/dashboard/admin/teachers", label: "Teachers", icon: <UserCog size={18} /> },
   { to: "/dashboard/admin/admissions", label: "Admissions", icon: <FileText size={18} /> },
-  { to: "/dashboard/admin/fees", label: "Fees & Payments", icon: <CreditCard size={18} /> },
-  { to: "/dashboard/admin/attendance", label: "Attendance", icon: <ClipboardList size={18} /> },
-  { to: "/dashboard/admin/academics", label: "Academics", icon: <BookOpen size={18} /> },
-  { to: "/dashboard/admin/announcements", label: "Announcements", icon: <BarChart3 size={18} /> },
+  { to: "/dashboard/admin/fees", label: "Fee Management", icon: <Banknote size={18} /> },
+  { to: "/dashboard/admin/attendance", label: "Attendance", icon: <CalendarCheck size={18} /> },
+  { to: "/dashboard/admin/academics", label: "Academics", icon: <BookOpenCheck size={18} /> },
+  { to: "/dashboard/admin/timetable", label: "Timetable", icon: <Calendar size={18} /> },
+  { to: "/dashboard/admin/announcements", label: "Announcements", icon: <Megaphone size={18} /> },
 ];
 
 export default function AdminLayout() {

@@ -4,8 +4,9 @@ import StatCard from "@/components/dashboard/StatCard";
 import {
   LayoutDashboard, BookOpen, Users, ClipboardList, FileText,
   Award, Calendar, MessageSquare, BarChart3, Settings,
-  CheckCircle2, ClipboardCheck, FileEdit, Megaphone,
+  CheckCircle2, ClipboardCheck, FileEdit, Megaphone, Clock,
 } from "lucide-react";
+import { useStore } from "@/store";
 
 const nav = [
   { to: "/dashboard/teacher", label: "Dashboard", icon: <LayoutDashboard size={18} /> },
@@ -42,11 +43,35 @@ const schedule = [
 
 export function TeacherDashboard() {
   const navigate = useNavigate();
+  const { attendance, toggleClockIn } = useStore();
+  const teacherAttendance = attendance["T-001"] || { isClockedIn: false, lastActionTime: null };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-3xl font-black text-navy">Teacher Dashboard</h1>
-        <p className="text-muted-foreground text-sm">Welcome back, Mr. Daniel Marko 👋</p>
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="font-display text-3xl font-black text-navy">Teacher Dashboard</h1>
+          <p className="text-muted-foreground text-sm">Welcome back, Mr. Daniel Marko 👋</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="text-right">
+            <div className="text-xs text-muted-foreground font-bold tracking-wider">STATUS</div>
+            <div className={`text-sm font-bold ${teacherAttendance.isClockedIn ? "text-emerald-600" : "text-amber-600"}`}>
+              {teacherAttendance.isClockedIn ? "Clocked In" : "Clocked Out"}
+            </div>
+          </div>
+          <button 
+            onClick={() => toggleClockIn("T-001")}
+            className={`flex items-center gap-2 px-5 py-2.5 text-xs font-bold tracking-wider transition ${
+              teacherAttendance.isClockedIn 
+                ? "bg-amber-100 text-amber-700 hover:bg-amber-200" 
+                : "bg-emerald-600 text-white hover:bg-emerald-700"
+            }`}
+          >
+            <Clock size={16} />
+            {teacherAttendance.isClockedIn ? "CLOCK OUT" : "CLOCK IN"}
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
