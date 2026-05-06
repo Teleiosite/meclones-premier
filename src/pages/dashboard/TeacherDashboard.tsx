@@ -4,12 +4,13 @@ import StatCard from "@/components/dashboard/StatCard";
 import {
   LayoutDashboard, BookOpen, Users, ClipboardList, FileText,
   Award, Calendar, MessageSquare, BarChart3, Settings,
-  CheckCircle2, ClipboardCheck, FileEdit, Megaphone, Clock,
+  CheckCircle2, ClipboardCheck, FileEdit, Megaphone, Clock, TimerReset,
 } from "lucide-react";
 import { useStore } from "@/store";
 
 const nav = [
   { to: "/dashboard/teacher", label: "Dashboard", icon: <LayoutDashboard size={18} /> },
+  { to: "/dashboard/teacher/clockin-clockout", label: "My Attendance", icon: <TimerReset size={18} /> },
   { to: "/dashboard/teacher/classes", label: "My Classes", icon: <BookOpen size={18} /> },
   { to: "/dashboard/teacher/students", label: "Students", icon: <Users size={18} /> },
   { to: "/dashboard/teacher/attendance", label: "Attendance", icon: <ClipboardCheck size={18} /> },

@@ -40,7 +40,11 @@ import TeacherMessages from "./pages/dashboard/teacher/Messages";
 import TeacherTimetable from "./pages/dashboard/teacher/Timetable";
 import TeacherReports from "./pages/dashboard/teacher/Reports";
 import TeacherSettings from "./pages/dashboard/teacher/Settings";
+<<<<<<< HEAD
 import TeacherClockInClockOut from "./pages/dashboard/teacher/ClockinClockout";
+=======
+import TeacherClockinClockout from "./pages/dashboard/teacher/ClockinClockout";
+>>>>>>> 76282c8 (feat: fix Admin Attendance UI consistency and add Teacher My Attendance (Clock-in/Clock-out) page)
 
 // Student sub-pages
 import StudentCourses from "./pages/dashboard/student/Courses";
@@ -101,9 +105,9 @@ const App = () => (
             <Route path="announcements" element={<AdminAnnouncements />} />
           </Route>
 
-          {/* Teacher portal */}
           <Route path="/dashboard/teacher" element={<TeacherLayout />}>
             <Route index element={<TeacherDashboard />} />
+            <Route path="clockin-clockout" element={<TeacherClockinClockout />} />
             <Route path="classes" element={<TeacherClasses />} />
             <Route path="students" element={<TeacherStudents />} />
             <Route path="attendance" element={<TeacherAttendance />} />

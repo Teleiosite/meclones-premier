@@ -19,10 +19,10 @@ const classes = ["Primary 3A", "Primary 5A", "JSS 1A", "JSS 2B", "SS 1A", "SS 2B
 const generateStudents = (cls: string) => [
   { id: 1, name: "David Okafor", present: true, timeIn: "07:41 AM", timeOut: "03:21 PM", ip: "10.12.0.14" },
   { id: 2, name: "Grace Okafor", present: true, timeIn: "07:43 AM", timeOut: "03:18 PM", ip: "10.12.0.21" },
-  { id: 3, name: "Amina Yusuf", present: false, timeIn: "—", timeOut: "—", ip: "—" },
+  { id: 3, name: "Amina Yusuf", present: false, timeIn: "ΓÇö", timeOut: "ΓÇö", ip: "ΓÇö" },
   { id: 4, name: "Emeka Eze", present: true, timeIn: "07:49 AM", timeOut: "03:24 PM", ip: "10.12.0.17" },
   { id: 5, name: "Fatima Bello", present: true, timeIn: "07:45 AM", timeOut: "03:16 PM", ip: "10.12.0.25" },
-  { id: 6, name: "Tunde Adesanya", present: false, timeIn: "—", timeOut: "—", ip: "—" },
+  { id: 6, name: "Tunde Adesanya", present: false, timeIn: "ΓÇö", timeOut: "ΓÇö", ip: "ΓÇö" },
   { id: 7, name: "Ngozi Nwosu", present: true, timeIn: "07:39 AM", timeOut: "03:26 PM", ip: "10.12.0.12" },
   { id: 8, name: "Chukwudi Obi", present: true, timeIn: "07:46 AM", timeOut: "03:19 PM", ip: "10.12.0.18" },
 ].map((s) => ({ ...s, class: cls }));
@@ -99,7 +99,7 @@ export default function AdminAttendance() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-4xl font-black text-navy">Attendance Matrix <span className="text-gold">›</span> <span className="text-2xl text-muted-foreground">{tabs.find((t) => t.key === tab)?.label}</span></h1>
+        <h1 className="font-display text-4xl font-black text-navy">Attendance Matrix <span className="text-gold">ΓÇ║</span> <span className="text-2xl text-muted-foreground">{tabs.find((t) => t.key === tab)?.label}</span></h1>
         <p className="text-muted-foreground text-lg max-w-3xl">Advanced biometric monitoring and network-level security policing for organizational check-in integrity.</p>
       </div>
 
@@ -226,8 +226,8 @@ export default function AdminAttendance() {
               <div className="space-y-4">
                 <div className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground">Authorized IP Pool</div>
                 <div className="flex gap-3">
-                  <input placeholder="e.g. 192.168.1.1, 10.0.0.1" className="flex-1 border border-border px-3 py-3 bg-secondary" />
-                  <button className="border border-orange-300 text-orange-600 px-4 font-semibold">Capture My IP</button>
+                  <input placeholder="e.g. 192.168.1.1, 10.0.0.1" className="flex-1 border border-border rounded-md px-3 py-3 bg-secondary" />
+                  <button className="border border-primary text-primary px-4 rounded-md font-semibold hover:bg-primary/5 transition">Capture My IP</button>
                 </div>
               </div>
             </PolicyCard>
@@ -235,10 +235,10 @@ export default function AdminAttendance() {
             <PolicyCard title="Geofence Registry" icon={<MapPin size={18} />} tone="purple">
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
-                  <input placeholder="Latitude reference" className="border border-border px-3 py-3 bg-secondary" />
-                  <input placeholder="Longitude reference" className="border border-border px-3 py-3 bg-secondary" />
+                  <input placeholder="Latitude reference" className="border border-border rounded-md px-3 py-3 bg-secondary" />
+                  <input placeholder="Longitude reference" className="border border-border rounded-md px-3 py-3 bg-secondary" />
                 </div>
-                <button className="w-full border border-purple-300 text-purple-600 py-3 font-semibold">Sync GPS Coordinates</button>
+                <button className="w-full border border-primary text-primary rounded-md py-3 font-semibold hover:bg-primary/5 transition">Sync GPS Coordinates</button>
               </div>
             </PolicyCard>
           </div>
