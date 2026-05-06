@@ -85,7 +85,7 @@ export default function AdminFees() {
                 </td>
                 <td className="px-5 py-4">
                   {p.status !== "Paid" && (
-                    <button className="text-xs font-bold bg-gold text-navy px-3 py-1 hover:bg-gold/80 transition">REMIND</button>
+                    <button onClick={() => toast.success(`Reminder sent to ${p.name}.`)} className="text-xs font-bold bg-gold text-navy px-3 py-1 hover:bg-gold/80 transition">REMIND</button>
                   )}
                 </td>
               </tr>
