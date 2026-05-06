@@ -43,7 +43,7 @@ export default function StudentResults() {
       <div className="bg-white border border-border overflow-x-auto">
         <div className="px-5 py-4 border-b border-border flex items-center justify-between">
           <h3 className="font-bold text-navy">Subject Results — Term 2, 2026</h3>
-          <button className="text-xs font-bold text-navy border border-navy px-4 py-1.5 hover:bg-navy hover:text-gold transition">DOWNLOAD PDF</button>
+          <button onClick={() => { import("@/lib/csv").then(({ downloadCSV }) => downloadCSV("results-term2.csv", [["Subject", "Teacher", "CA", "Exam", "Total", "Grade"], ...subjects.map((s) => [s.name, s.teacher, s.ca, s.exam, s.total, s.grade])])); import("sonner").then(({ toast }) => toast.success("Results downloaded.")); }} className="text-xs font-bold text-navy border border-navy px-4 py-1.5 hover:bg-navy hover:text-gold transition">DOWNLOAD PDF</button>
         </div>
         <table className="w-full text-sm">
           <thead className="border-b border-border bg-secondary/40">
