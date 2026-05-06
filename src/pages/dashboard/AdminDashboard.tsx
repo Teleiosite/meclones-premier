@@ -165,7 +165,7 @@ export function AdminDashboard() {
           <div className="bg-white border border-border p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-navy">My Classes</h3>
-              <a className="text-xs text-navy font-semibold">View All</a>
+              <Link to="/dashboard/admin/academics" className="text-xs text-navy font-semibold hover:text-gold">View All</Link>
             </div>
             <div className="space-y-4">
               {classes.map((c, i) => (
@@ -186,10 +186,10 @@ export function AdminDashboard() {
           <div className="bg-white border border-border p-5">
             <h3 className="font-bold text-navy mb-4">Quick Actions</h3>
             <div className="grid grid-cols-2 gap-2">
-              <button className="bg-navy text-gold py-2.5 text-xs font-bold tracking-wider">ADD STUDENT</button>
-              <button className="bg-navy text-gold py-2.5 text-xs font-bold tracking-wider">NEW REPORT</button>
-              <button className="border border-navy text-navy py-2.5 text-xs font-bold tracking-wider">ATTENDANCE</button>
-              <button className="border border-navy text-navy py-2.5 text-xs font-bold tracking-wider">SEND NOTICE</button>
+              <button onClick={() => navigate("/dashboard/admin/students")} className="bg-navy text-gold py-2.5 text-xs font-bold tracking-wider hover:bg-navy/90">ADD STUDENT</button>
+              <button onClick={() => navigate("/dashboard/admin/academics")} className="bg-navy text-gold py-2.5 text-xs font-bold tracking-wider hover:bg-navy/90">NEW REPORT</button>
+              <button onClick={() => navigate("/dashboard/admin/attendance")} className="border border-navy text-navy py-2.5 text-xs font-bold tracking-wider hover:bg-navy hover:text-gold">ATTENDANCE</button>
+              <button onClick={() => navigate("/dashboard/admin/announcements")} className="border border-navy text-navy py-2.5 text-xs font-bold tracking-wider hover:bg-navy hover:text-gold">SEND NOTICE</button>
             </div>
           </div>
         </div>
