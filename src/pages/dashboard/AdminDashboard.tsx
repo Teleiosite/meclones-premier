@@ -123,7 +123,7 @@ export function AdminDashboard() {
           <div className="bg-white border border-border p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-navy">Pending Admissions</h3>
-              <a className="text-xs text-navy font-semibold">View All</a>
+              <Link to="/dashboard/admin/admissions" className="text-xs text-navy font-semibold hover:text-gold">View All</Link>
             </div>
             <div className="space-y-3">
               {pending.map((p, i) => (
@@ -135,9 +135,9 @@ export function AdminDashboard() {
                     <div className="font-semibold text-navy">{p.name}</div>
                     <div className="text-[11px] text-muted-foreground">{p.grade} · {p.date}</div>
                   </div>
-                  <button className="text-xs font-bold tracking-wider text-navy border border-navy px-3 py-1 hover:bg-navy hover:text-gold">
+                  <Link to="/dashboard/admin/admissions" className="text-xs font-bold tracking-wider text-navy border border-navy px-3 py-1 hover:bg-navy hover:text-gold">
                     VIEW
-                  </button>
+                  </Link>
                 </div>
               ))}
             </div>
