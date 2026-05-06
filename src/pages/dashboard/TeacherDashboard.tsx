@@ -108,7 +108,7 @@ export function TeacherDashboard() {
                       <td>{r[1]}</td>
                       <td>{r[2]}</td>
                       <td>{r[3]}</td>
-                      <td className="text-right"><button className="bg-navy text-gold px-3 py-1 text-xs font-bold">GRADE</button></td>
+                      <td className="text-right"><button onClick={() => navigate("/dashboard/teacher/assignments")} className="bg-navy text-gold px-3 py-1 text-xs font-bold hover:bg-navy/90">GRADE</button></td>
                     </tr>
                   ))}
                 </tbody>
