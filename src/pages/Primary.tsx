@@ -2,6 +2,10 @@ import PageHero from "@/components/site/PageHero";
 import CTABanner from "@/components/site/CTABanner";
 import primaryImg from "@/assets/primary.jpg";
 import classroomImg from "@/assets/classroom.jpg";
+import campusImg from "@/assets/campus.jpg";
+import gradImg from "@/assets/graduation.jpg";
+import secondaryImg from "@/assets/secondary.jpg";
+import heroImg from "@/assets/hero-students.jpg";
 import { Heart, Palette, Music, Trophy } from "lucide-react";
 
 const programmes = [
@@ -109,6 +113,36 @@ export default function Primary() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* GALLERY */}
+      <section className="bg-cream">
+        <div className="container-page py-24">
+          <div className="eyebrow mb-3">CAMPUS LIFE</div>
+          <h2 className="display text-4xl text-navy mb-10">A day at Primary Meclones.</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {[
+              { src: classroomImg, label: "Learning in action" },
+              { src: primaryImg, label: "Outdoor play" },
+              { src: campusImg, label: "Our beautiful campus" },
+              { src: heroImg, label: "Focused learners" },
+              { src: gradImg, label: "Prize giving day" },
+              { src: secondaryImg, label: "School community" },
+            ].map((img, i) => (
+              <div key={i} className="aspect-square overflow-hidden group relative">
+                <img
+                  src={img.src}
+                  alt={img.label}
+                  loading="lazy"
+                  className="w-full h-full object-cover group-hover:scale-105 transition duration-700"
+                />
+                <div className="absolute inset-0 bg-navy/40 opacity-0 group-hover:opacity-100 transition flex items-end p-4">
+                  <span className="text-white text-xs font-bold tracking-wider">{img.label}</span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>

@@ -8,16 +8,13 @@ import {
 
 const nav = [
   { to: "/dashboard/admin", label: "Dashboard", icon: <LayoutDashboard size={18} /> },
-  { to: "/dashboard/admin/users", label: "Users", icon: <Users size={18} /> },
   { to: "/dashboard/admin/students", label: "Students", icon: <GraduationCap size={18} /> },
   { to: "/dashboard/admin/teachers", label: "Teachers", icon: <UserCog size={18} /> },
   { to: "/dashboard/admin/admissions", label: "Admissions", icon: <FileText size={18} /> },
   { to: "/dashboard/admin/fees", label: "Fees & Payments", icon: <CreditCard size={18} /> },
+  { to: "/dashboard/admin/attendance", label: "Attendance", icon: <ClipboardList size={18} /> },
   { to: "/dashboard/admin/academics", label: "Academics", icon: <BookOpen size={18} /> },
-  { to: "/dashboard/admin/exams", label: "Examinations", icon: <ClipboardList size={18} /> },
-  { to: "/dashboard/admin/timetable", label: "Timetable", icon: <Calendar size={18} /> },
-  { to: "/dashboard/admin/reports", label: "Reports", icon: <BarChart3 size={18} /> },
-  { to: "/dashboard/admin/settings", label: "Settings", icon: <Settings size={18} /> },
+  { to: "/dashboard/admin/announcements", label: "Announcements", icon: <BarChart3 size={18} /> },
 ];
 
 export default function AdminLayout() {

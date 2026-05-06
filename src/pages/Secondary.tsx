@@ -108,6 +108,33 @@ export default function Secondary() {
         </div>
       </section>
 
+      {/* ACHIEVEMENTS STRIP */}
+      <section className="bg-cream">
+        <div className="container-page py-24">
+          <div className="eyebrow mb-3">HALL OF ACHIEVEMENT</div>
+          <h2 className="display text-4xl text-navy mb-10">Results that speak for themselves.</h2>
+          <div className="grid md:grid-cols-2 gap-4">
+            {[
+              { name: "Adaeze Okonkwo", award: "WAEC Best Student — Lagos State", year: "2025", score: "7 A1s" },
+              { name: "Emeka Nwosu", award: "JAMB Score — 340/400", year: "2025", score: "Top 1%" },
+              { name: "Fatima Al-Hassan", award: "British Council Essay Prize", year: "2024", score: "National Winner" },
+              { name: "Chukwudi Obi", award: "University of Lagos Full Scholarship", year: "2024", score: "Medicine" },
+              { name: "Blessing Eze", award: "National Mathematics Olympiad — Gold", year: "2024", score: "1st Place" },
+              { name: "Tomiwa Adeyemi", award: "International Baccalaureate Score", year: "2023", score: "42/45" },
+            ].map((a, i) => (
+              <div key={i} className="bg-white border border-navy/10 p-6 flex gap-5 items-start hover:border-navy transition">
+                <div className="text-[10px] font-bold tracking-[0.25em] text-gold bg-gold/10 px-2 py-1 mt-1 shrink-0">{a.year}</div>
+                <div>
+                  <div className="font-display font-bold text-lg text-navy">{a.name}</div>
+                  <div className="text-sm text-navy/70 mt-1">{a.award}</div>
+                  <div className="mt-2 text-xs font-bold tracking-wider text-gold">{a.score}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* FEES */}
       <section className="bg-navy text-white">
         <div className="container-page py-24">
