@@ -207,10 +207,10 @@ export function StudentDashboard() {
           <div className="bg-white border border-border p-5">
             <h3 className="font-bold text-navy mb-3">Quick Links</h3>
             <div className="grid grid-cols-2 gap-2">
-              <button className="border border-navy text-navy py-2.5 text-xs font-bold tracking-wider flex items-center justify-center gap-1"><Download size={14} />MATERIALS</button>
-              <button className="border border-navy text-navy py-2.5 text-xs font-bold tracking-wider flex items-center justify-center gap-1"><Upload size={14} />SUBMIT</button>
-              <button className="border border-navy text-navy py-2.5 text-xs font-bold tracking-wider flex items-center justify-center gap-1"><Calendar size={14} />EXAMS</button>
-              <button className="border border-navy text-navy py-2.5 text-xs font-bold tracking-wider flex items-center justify-center gap-1"><CreditCard size={14} />FEES</button>
+              <button onClick={() => navigate("/dashboard/student/resources")} className="border border-navy text-navy py-2.5 text-xs font-bold tracking-wider flex items-center justify-center gap-1 hover:bg-navy hover:text-gold"><Download size={14} />MATERIALS</button>
+              <button onClick={() => navigate("/dashboard/student/assignments")} className="border border-navy text-navy py-2.5 text-xs font-bold tracking-wider flex items-center justify-center gap-1 hover:bg-navy hover:text-gold"><Upload size={14} />SUBMIT</button>
+              <button onClick={() => navigate("/dashboard/student/results")} className="border border-navy text-navy py-2.5 text-xs font-bold tracking-wider flex items-center justify-center gap-1 hover:bg-navy hover:text-gold"><Calendar size={14} />EXAMS</button>
+              <button onClick={() => navigate("/fees")} className="border border-navy text-navy py-2.5 text-xs font-bold tracking-wider flex items-center justify-center gap-1 hover:bg-navy hover:text-gold"><CreditCard size={14} />FEES</button>
             </div>
           </div>
         </div>
