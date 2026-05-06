@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { CheckCircle2, XCircle } from "lucide-react";
+import { toast } from "sonner";
 
 const classes = ["Primary 3A", "Primary 5A", "JSS 1A", "JSS 2B", "SS 1A", "SS 2B"];
 
