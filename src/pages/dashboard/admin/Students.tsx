@@ -23,7 +23,7 @@ export default function AdminStudents() {
   const [classFilter, setClassFilter] = useState("All");
   const [items, setItems] = useState(students);
   const [showAdd, setShowAdd] = useState(false);
-  const [viewing, setViewing] = useState<typeof students[0] | null>(null);
+  const [viewing, setViewing] = useState<Student | null>(null);
   const [form, setForm] = useState({ name: "", class: "Primary 3", gender: "Male", parent: "" });
 
   const classes = ["All", "Primary 3", "Primary 5", "Primary 6", "JSS 1", "JSS 2", "JSS 3", "SS 1", "SS 2", "SS 3"];
