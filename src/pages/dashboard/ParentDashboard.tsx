@@ -30,6 +30,7 @@ const children = [
 ];
 
 export function ParentDashboard() {
+  const navigate = useNavigate();
   return (
     <div className="space-y-6">
       <div>
