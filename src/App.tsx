@@ -40,6 +40,7 @@ import TeacherMessages from "./pages/dashboard/teacher/Messages";
 import TeacherTimetable from "./pages/dashboard/teacher/Timetable";
 import TeacherReports from "./pages/dashboard/teacher/Reports";
 import TeacherSettings from "./pages/dashboard/teacher/Settings";
+import TeacherClockInClockOut from "./pages/dashboard/teacher/ClockinClockout";
 
 // Student sub-pages
 import StudentCourses from "./pages/dashboard/student/Courses";
@@ -112,6 +113,7 @@ const App = () => (
             <Route path="timetable" element={<TeacherTimetable />} />
             <Route path="reports" element={<TeacherReports />} />
             <Route path="settings" element={<TeacherSettings />} />
+            <Route path="clockin-clockout" element={<TeacherClockInClockOut />} />
           </Route>
 
           {/* Student portal */}
