@@ -14,6 +14,159 @@ export type Database = {
   }
   public: {
     Tables: {
+      attendance_anomalies: {
+        Row: {
+          anomaly_type: string
+          attendance_log_id: string | null
+          created_at: string
+          details: Json | null
+          id: string
+          resolved: boolean
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          teacher_id: string
+        }
+        Insert: {
+          anomaly_type: string
+          attendance_log_id?: string | null
+          created_at?: string
+          details?: Json | null
+          id?: string
+          resolved?: boolean
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          teacher_id: string
+        }
+        Update: {
+          anomaly_type?: string
+          attendance_log_id?: string | null
+          created_at?: string
+          details?: Json | null
+          id?: string
+          resolved?: boolean
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          teacher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_anomalies_attendance_log_id_fkey"
+            columns: ["attendance_log_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_logs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_anomalies_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_anomalies_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "teachers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attendance_logs: {
+        Row: {
+          clock_in_at: string | null
+          clock_out_at: string | null
+          created_at: string
+          device_id: string | null
+          id: string
+          log_date: string
+          notes: string | null
+          outcome: string
+          source_ip: string | null
+          teacher_id: string
+          updated_at: string
+          user_agent: string | null
+          validation: string
+        }
+        Insert: {
+          clock_in_at?: string | null
+          clock_out_at?: string | null
+          created_at?: string
+          device_id?: string | null
+          id?: string
+          log_date?: string
+          notes?: string | null
+          outcome?: string
+          source_ip?: string | null
+          teacher_id: string
+          updated_at?: string
+          user_agent?: string | null
+          validation?: string
+        }
+        Update: {
+          clock_in_at?: string | null
+          clock_out_at?: string | null
+          created_at?: string
+          device_id?: string | null
+          id?: string
+          log_date?: string
+          notes?: string | null
+          outcome?: string
+          source_ip?: string | null
+          teacher_id?: string
+          updated_at?: string
+          user_agent?: string | null
+          validation?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_logs_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "teachers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attendance_policy: {
+        Row: {
+          absence_trigger: string
+          earliest_sign_in: string
+          grace_threshold_mins: number
+          half_day_boundary: string
+          id: number
+          punctuality_limit: string
+          standard_shift_end: string
+          updated_at: string
+          window_authorization: string
+        }
+        Insert: {
+          absence_trigger?: string
+          earliest_sign_in?: string
+          grace_threshold_mins?: number
+          half_day_boundary?: string
+          id?: number
+          punctuality_limit?: string
+          standard_shift_end?: string
+          updated_at?: string
+          window_authorization?: string
+        }
+        Update: {
+          absence_trigger?: string
+          earliest_sign_in?: string
+          grace_threshold_mins?: number
+          half_day_boundary?: string
+          id?: number
+          punctuality_limit?: string
+          standard_shift_end?: string
+          updated_at?: string
+          window_authorization?: string
+        }
+        Relationships: []
+      }
       class_subjects: {
         Row: {
           class_id: string
@@ -220,6 +373,64 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      student_attendance: {
+        Row: {
+          class_id: string
+          created_at: string
+          id: string
+          log_date: string
+          notes: string | null
+          recorded_by_teacher_id: string | null
+          status: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          id?: string
+          log_date?: string
+          notes?: string | null
+          recorded_by_teacher_id?: string | null
+          status?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          id?: string
+          log_date?: string
+          notes?: string | null
+          recorded_by_teacher_id?: string | null
+          status?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_attendance_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_attendance_recorded_by_teacher_id_fkey"
+            columns: ["recorded_by_teacher_id"]
+            isOneToOne: false
+            referencedRelation: "teachers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_attendance_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       students: {
         Row: {
