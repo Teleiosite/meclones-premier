@@ -103,7 +103,7 @@ const App = () => (
 
           <Route path="/dashboard/teacher" element={<TeacherLayout />}>
             <Route index element={<TeacherDashboard />} />
-            <Route path="clockin-clockout" element={<TeacherClockinClockout />} />
+            <Route path="clockin-clockout" element={<TeacherClockInClockOut />} />
             <Route path="classes" element={<TeacherClasses />} />
             <Route path="students" element={<TeacherStudents />} />
             <Route path="attendance" element={<TeacherAttendance />} />
