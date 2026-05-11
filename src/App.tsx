@@ -113,6 +113,7 @@ const App = () => (
             <Route path="timetable" element={<TeacherTimetable />} />
             <Route path="reports" element={<TeacherReports />} />
             <Route path="settings" element={<TeacherSettings />} />
+            <Route path="clockin-clockout" element={<TeacherClockInClockOut />} />
           </Route>
 
           {/* Student portal */}
