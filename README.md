@@ -1,6 +1,6 @@
 # Meclones Academy — School Management Platform
 
-> A full-featured, role-based school management system for a premium Nigerian combined school (Nursery–SS3). Built with React 18, TypeScript, Vite 5, Tailwind CSS, shadcn/ui, and Zustand.
+> A full-featured, role-based school management system for a premium Nigerian combined school (Nursery–SS3). Built with React 18, TypeScript, Vite 5, Tailwind CSS, shadcn/ui, and Supabase. **Now live on Vercel with real backend authentication.**
 
 ---
 
@@ -40,7 +40,7 @@ The portal supports **four user roles**, each with their own dedicated dashboard
 | Build Tool | Vite 5 (SWC transformer) |
 | Styling | Tailwind CSS v3 + custom HSL design tokens |
 | Components | shadcn/ui (Radix UI primitives) |
-| State Management | Zustand v5 |
+| State Management | Zustand v5 (timetable/UI only) + Supabase (persistent data) |
 | Routing | React Router DOM v6 |
 | Forms | React Hook Form + Zod validation |
 | Data Fetching | TanStack React Query v5 |
@@ -48,6 +48,8 @@ The portal supports **four user roles**, each with their own dedicated dashboard
 | Icons | Lucide React |
 | Charts | Recharts |
 | Fonts | Inter (sans) + Fraunces (display) via Google Fonts |
+| Backend / Database | Supabase (PostgreSQL + Auth + Row Level Security) |
+| Hosting | Vercel (automatic GitHub deploys) |
 | Testing | Vitest + Testing Library |
 | Linting | ESLint 9 + TypeScript-ESLint |
 
@@ -203,6 +205,176 @@ The project uses a **custom HSL token system** defined in `src/index.css` and ex
 ---
 
 ## What Has Been Achieved
+
+> Last updated: May 2026. Production URL: **https://meclones-premier.vercel.app**
+
+### ✅ Infrastructure & Deployment
+- [x] **Live on Vercel** — automatic deploys on every `git push` to `main`
+- [x] **Supabase backend** — 16-table PostgreSQL schema with Row Level Security (RLS)
+- [x] **Environment variables** configured on Vercel (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`)
+- [x] **Global Error Boundary** — the app shows a diagnostic screen instead of a white page if something crashes
+- [x] **Supabase URL auto-fix** — handles cases where only the project ID is provided instead of the full URL
+
+### ✅ Public Website
+- [x] Full multi-page marketing site (Home, Primary, Secondary, About, Admissions, Fees, News, Contact)
+- [x] Responsive Navbar with mobile menu
+- [x] Footer with school links and contact info
+- [x] Hero sections, CTA banners, and mobile sticky CTA
+- [x] SEO meta tags, OG tags, Twitter card tags
+
+### ✅ Authentication (Live)
+- [x] **Real Supabase Auth** — `signInWithPassword`, session tokens, JWT
+- [x] **AuthGuard** — all `/dashboard/*` routes are protected; unauthenticated users are redirected to `/login`
+- [x] **Role-based routing** — user role is read from Supabase `profiles` table → redirected to `/dashboard/:role`
+- [x] **Metadata fallback** — role stored in `user_metadata` to bypass RLS on first login
+- [x] **Admin auto-provisioning** — if `admin@meclones.edu.ng` logs in without a profile row, role is assigned automatically
+- [x] Forgot Password page (Supabase magic link)
+
+### ✅ Admin Portal — Wired to Supabase
+- [x] **Teachers** — loads real teacher records from `teachers` table, shows active count
+- [x] **Admissions** — loads applications from `admissions` table; approve/reject writes back to DB
+- [x] **Fees (Admin)** — loads payment history from `payments` table, shows collection totals
+- [x] **Announcements** — loads and creates announcements from `announcements` table
+- [x] Dashboard overview UI (KPI stat cards)
+- [x] Students management table (UI only — see below)
+
+### ✅ Teacher Portal — Wired to Supabase
+- [x] **Clock-In / Clock-Out** — persistent timestamps in `teacher_clockin` table; history loads from DB
+- [x] **Mark Attendance** — loads students from `timetable` table by assigned class; saves records via `upsert` to `attendance` table
+
+### ✅ Student Portal — Wired to Supabase
+- [x] **Results** — loads from `results` joined with `exams` tables
+- [x] **Attendance** — loads personal attendance history from `attendance` table with live progress bars
+
+### ✅ Parent Portal — Wired to Supabase
+- [x] **Children** — loads child profiles with live attendance rates and subject scores
+- [x] **Fees** — loads payment history and outstanding balances from `fees` and `payments` tables
+
+### ✅ Branding / Housekeeping
+- [x] Custom Meclones Academy school emblem favicon
+- [x] Cleaned all third-party meta tags from `index.html`
+- [x] Package renamed and versioned to `meclones-premier@1.0.0`
+
+---
+
+## What Remains (Road to Full Production)
+
+### 🔴 Critical — Pages Still on Mock/Dummy Data
+
+These pages are fully designed but still show hardcoded data, not live database records:
+
+| Page | Location | Status | Fix Needed |
+|---|---|---|---|
+| Admin Dashboard (overview stats) | `AdminDashboard.tsx` | 🔴 Mock | Wire stats to `students`, `teachers`, `payments` counts |
+| Admin Students Roster | `admin/Students.tsx` | 🔴 Mock | Load from `students` table |
+| Admin Attendance Matrix | `admin/Attendance.tsx` | 🔴 Mock | Load from `attendance` + `teacher_clockin` tables |
+| Admin Academics (Classes/Subjects) | `admin/Academics.tsx` | 🔴 Zustand | Wire to `classes` table in Supabase |
+| Admin Timetable | `admin/Timetable.tsx` | 🔴 Zustand | Wire to `timetable` table in Supabase |
+| Teacher Classes | `teacher/Classes.tsx` | 🔴 Mock | Load teacher's classes from `timetable` |
+| Teacher Students | `teacher/Students.tsx` | 🔴 Mock | Load students from teacher's class |
+| Teacher Assignments | `teacher/Assignments.tsx` | 🔴 Mock | Load from `assignments` table |
+| Teacher Exams | `teacher/Exams.tsx` | 🔴 Mock | Load from `exams` table |
+| Teacher Timetable | `teacher/Timetable.tsx` | 🔴 Zustand | Load from `timetable` table |
+| Student Courses | `student/Courses.tsx` | 🔴 Mock | Load from `timetable` by student's class |
+| Student Assignments | `student/Assignments.tsx` | 🔴 Mock | Load from `assignments` table |
+| Student Timetable | `student/Timetable.tsx` | 🔴 Mock | Load from `timetable` table |
+| Parent Attendance | `parent/Attendance.tsx` | 🔴 Mock | Load from `attendance` for children |
+| Parent Results | `parent/Results.tsx` | 🔴 Mock | Load from `results` for children |
+
+### 🟡 Important — Partially Done or Not Started
+
+#### 1. Profiles Table INSERT Policy (Security Fix)
+**Problem:** The `profiles` table has no INSERT RLS policy, so the frontend cannot create profile rows.
+**Fix:** Run this SQL in Supabase SQL Editor:
+```sql
+-- Allow users to insert their own profile row on first login
+CREATE POLICY "Users can insert own profile" ON profiles
+  FOR INSERT WITH CHECK (auth.uid() = id);
+```
+Once this is done, the admin email bypass in `Login.tsx` can be removed.
+
+#### 2. Paystack Payment Integration
+**What:** The "Pay Now" button in `parent/Fees.tsx` is a placeholder.
+**How:** Use the `react-paystack` package (already installed):
+```tsx
+<PaystackButton
+  publicKey={import.meta.env.VITE_PAYSTACK_PUBLIC_KEY}
+  amount={amount * 100}  // kobo
+  email={parentEmail}
+  onSuccess={(ref) => recordPayment(ref)}
+/>
+```
+Add `VITE_PAYSTACK_PUBLIC_KEY` to Vercel env vars.
+
+#### 3. Messaging System
+**What:** All Messages pages (`teacher/Messages.tsx`, `student/Messages.tsx`, `parent/Messages.tsx`) are static UI shells.
+**How:** Wire to the `messages` table (already in schema). Use Supabase real-time subscriptions for live chat.
+
+#### 4. Real-Time Teacher Clock-In on Admin Dashboard
+**What:** Admin Teacher table shows teacher status but reads from Zustand (lost on refresh).
+**How:** Replace with a Supabase real-time subscription to `teacher_clockin` table.
+
+#### 5. Admin Student Admissions → Auto-Create User Account
+**What:** When admin approves an admission, the student should automatically get a Supabase Auth account.
+**How:** Use a Supabase Edge Function to call `supabase.auth.admin.createUser()` on approval.
+
+### 🟢 Polish
+
+| Item | Status |
+|---|---|
+| PDF report generation (jsPDF) | Not started |
+| Mobile responsive audit of dashboard tables | Not done |
+| Automated tests (Vitest + Playwright) | Not done |
+| OG image for social sharing | Placeholder URL |
+| Notifications / unread badge in sidebar | Not wired |
+
+---
+
+## Getting Started (Local Dev)
+
+### Prerequisites
+- Node.js 18+
+- npm 9+
+
+### Setup
+
+```bash
+# Clone
+git clone https://github.com/Teleiosite/meclones-premier.git
+cd meclones-premier
+
+# Install dependencies
+npm install
+
+# Create .env file
+echo "VITE_SUPABASE_URL=https://your-project-id.supabase.co" >> .env
+echo "VITE_SUPABASE_ANON_KEY=your-anon-key" >> .env
+
+# Start dev server (runs on http://localhost:8080)
+npm run dev
+```
+
+### Available Scripts
+
+| Script | Purpose |
+|---|---|
+| `npm run dev` | Start Vite dev server on port 8080 |
+| `npm run build` | Production build to `dist/` |
+| `npm run preview` | Preview production build locally |
+| `npm run lint` | Run ESLint |
+| `npm run test` | Run Vitest test suite once |
+| `npm run test:watch` | Run Vitest in watch mode |
+
+### Live Credentials (Production)
+
+Authentication is **live and real** — credentials are stored in Supabase Auth.
+
+| Role | Email | Notes |
+|---|---|---|
+| Admin | `admin@meclones.edu.ng` | Auto-provisioned on first login |
+| Teacher | Create in Supabase Auth + `profiles` table | Assign `role = 'teacher'` |
+| Student | Create in Supabase Auth + `profiles` table | Assign `role = 'student'` |
+| Parent | Create in Supabase Auth + `profiles` table | Assign `role = 'parent'` |
 
 ### ✅ Public Website
 - [x] Full multi-page marketing site (Home, Primary, Secondary, About, Admissions, Fees, News, Contact)
