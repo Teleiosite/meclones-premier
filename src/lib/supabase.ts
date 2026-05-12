@@ -1,33 +1,34 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Get environment variables
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+let supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Diagnostic check: Are they valid strings starting with http?
+// AUTO-FIX: If the user only provided the Project ID (e.g. 'cbnuquviujgbxyanhssv')
+// we convert it into a full valid URL.
+if (supabaseUrl && !supabaseUrl.startsWith('http')) {
+  supabaseUrl = `https://${supabaseUrl}.supabase.co`;
+}
+
+// Diagnostic check
 const isValidUrl = typeof supabaseUrl === 'string' && supabaseUrl.startsWith('http');
 const hasKey = typeof supabaseAnonKey === 'string' && supabaseAnonKey.length > 0;
 
 export const isMissingEnv = !isValidUrl || !hasKey;
 
-/**
- * We wrap the client creation. 
- * If keys are missing, we return a 'dummy' proxy object that doesn't 
- * throw errors but also doesn't do anything, allowing the UI to render.
- */
 let client: any;
 
 if (!isMissingEnv) {
-  client = createClient(supabaseUrl, supabaseAnonKey);
+  client = createClient(supabaseUrl!, supabaseAnonKey!);
 } else {
-  // Return a proxy that swallows calls to prevent crashes in the UI
+  // Proxy fallback to prevent crashes
   client = new Proxy({}, {
     get: () => () => ({ data: null, error: { message: 'Supabase not initialized' } })
   });
   
   console.error(
     '[Meclones] Supabase Configuration Error:\n' +
-    `URL Valid: ${isValidUrl} (${supabaseUrl})\n` +
+    `URL Fixed: ${supabaseUrl}\n` +
     `Key Valid: ${hasKey}`
   );
 }
