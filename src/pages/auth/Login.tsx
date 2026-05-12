@@ -1,22 +1,51 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState } from "react";
-import { Lock, Mail, ShieldCheck } from "lucide-react";
+import { Lock, Mail, ShieldCheck, AlertCircle } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
-const roles = [
-  { value: "admin", label: "Admin", path: "/dashboard/admin" },
-  { value: "teacher", label: "Teacher", path: "/dashboard/teacher" },
-  { value: "student", label: "Student", path: "/dashboard/student" },
-  { value: "parent", label: "Parent", path: "/dashboard/parent" },
-];
+const ROLE_PATHS: Record<string, string> = {
+  admin:   "/dashboard/admin",
+  teacher: "/dashboard/teacher",
+  student: "/dashboard/student",
+  parent:  "/dashboard/parent",
+};
 
 export default function Login() {
   const navigate = useNavigate();
-  const [role, setRole] = useState("admin");
+  const location = useLocation();
+  const from = (location.state as { from?: { pathname: string } })?.from?.pathname;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [email, setEmail]       = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const target = roles.find((r) => r.value === role)?.path ?? "/";
-    navigate(target);
+    setError(null);
+    setLoading(true);
+
+    const { data, error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (authError || !data.user) {
+      setError(authError?.message ?? "Login failed. Please check your credentials.");
+      setLoading(false);
+      return;
+    }
+
+    // Fetch the user's role from profiles
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", data.user.id)
+      .single();
+
+    const role = profile?.role;
+    const destination = from || ROLE_PATHS[role] || "/";
+    navigate(destination, { replace: true });
   };
 
   return (
@@ -53,25 +82,14 @@ export default function Login() {
           <h2 className="font-display text-4xl font-black text-navy mb-2">Access your dashboard</h2>
           <p className="text-muted-foreground mb-8">Enter your credentials to continue.</p>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label className="block text-xs font-bold tracking-wider text-navy mb-2">SIGN IN AS</label>
-              <div className="grid grid-cols-4 gap-1 bg-secondary p-1">
-                {roles.map((r) => (
-                  <button
-                    key={r.value}
-                    type="button"
-                    onClick={() => setRole(r.value)}
-                    className={`py-2 text-xs font-bold tracking-wider transition ${
-                      role === r.value ? "bg-navy text-gold" : "text-navy/70 hover:text-navy"
-                    }`}
-                  >
-                    {r.label.toUpperCase()}
-                  </button>
-                ))}
-              </div>
+          {error && (
+            <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 mb-6">
+              <AlertCircle size={16} className="mt-0.5 shrink-0" />
+              <span>{error}</span>
             </div>
+          )}
 
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="block text-xs font-bold tracking-wider text-navy mb-2">EMAIL</label>
               <div className="relative">
@@ -79,7 +97,9 @@ export default function Login() {
                 <input
                   type="email"
                   required
-                  defaultValue="user@meclones.edu.ng"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@meclones.edu.ng"
                   className="w-full pl-10 pr-4 py-3 bg-white border border-border focus:border-navy focus:outline-none text-navy"
                 />
               </div>
@@ -97,7 +117,9 @@ export default function Login() {
                 <input
                   type="password"
                   required
-                  defaultValue="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
                   className="w-full pl-10 pr-4 py-3 bg-white border border-border focus:border-navy focus:outline-none text-navy"
                 />
               </div>
@@ -110,9 +132,10 @@ export default function Login() {
 
             <button
               type="submit"
-              className="w-full bg-navy text-gold py-4 font-bold tracking-wider text-sm hover:bg-navy/90 transition"
+              disabled={loading}
+              className="w-full bg-navy text-gold py-4 font-bold tracking-wider text-sm hover:bg-navy/90 transition disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              SIGN IN TO PORTAL →
+              {loading ? "SIGNING IN..." : "SIGN IN TO PORTAL →"}
             </button>
 
             <p className="text-center text-sm text-muted-foreground">

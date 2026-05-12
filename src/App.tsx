@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import AuthGuard from "./components/AuthGuard";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -88,6 +89,9 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
 
+          {/* Protected dashboard routes */}
+          <Route element={<AuthGuard />}>
+
           {/* Admin portal */}
           <Route path="/dashboard/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
@@ -141,6 +145,8 @@ const App = () => (
             <Route path="reports" element={<ParentReports />} />
             <Route path="settings" element={<ParentSettings />} />
           </Route>
+
+          </Route> {/* end AuthGuard */}
 
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -1,9 +1,32 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
-import { ArrowLeft, Mail, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Mail, CheckCircle2, AlertCircle } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 export default function ForgotPassword() {
-  const [sent, setSent] = useState(false);
+  const [email, setEmail]   = useState("");
+  const [sent, setSent]     = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError]   = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+    if (resetError) {
+      setError(resetError.message);
+      setLoading(false);
+      return;
+    }
+
+    setSent(true);
+    setLoading(false);
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-cream p-6">
@@ -20,13 +43,14 @@ export default function ForgotPassword() {
               Enter the email linked to your portal account and we'll send a secure reset link.
             </p>
 
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                setSent(true);
-              }}
-              className="space-y-5"
-            >
+            {error && (
+              <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 mb-5">
+                <AlertCircle size={16} className="mt-0.5 shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-5">
               <div>
                 <label className="block text-xs font-bold tracking-wider text-navy mb-2">EMAIL ADDRESS</label>
                 <div className="relative">
@@ -34,6 +58,8 @@ export default function ForgotPassword() {
                   <input
                     type="email"
                     required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@meclones.edu.ng"
                     className="w-full pl-10 pr-4 py-3 bg-white border border-border focus:border-navy focus:outline-none text-navy"
                   />
@@ -41,9 +67,10 @@ export default function ForgotPassword() {
               </div>
               <button
                 type="submit"
-                className="w-full bg-navy text-gold py-4 font-bold tracking-wider text-sm hover:bg-navy/90 transition"
+                disabled={loading}
+                className="w-full bg-navy text-gold py-4 font-bold tracking-wider text-sm hover:bg-navy/90 transition disabled:opacity-60"
               >
-                SEND RESET LINK →
+                {loading ? "SENDING..." : "SEND RESET LINK →"}
               </button>
               <p className="text-xs text-muted-foreground text-center">
                 Need help? Contact <span className="text-navy font-semibold">support@meclones.edu.ng</span>
@@ -57,7 +84,7 @@ export default function ForgotPassword() {
             </div>
             <h1 className="font-display text-2xl font-black text-navy mb-2">Check your inbox</h1>
             <p className="text-muted-foreground mb-6">
-              We've sent a password reset link. It will expire in 30 minutes.
+              We've sent a reset link to <strong>{email}</strong>. It will expire in 60 minutes.
             </p>
             <Link
               to="/login"
