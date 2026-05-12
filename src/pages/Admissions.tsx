@@ -1,8 +1,9 @@
 import { useState } from "react";
 import PageHero from "@/components/site/PageHero";
 import heroImg from "@/assets/hero-students.jpg";
-import { CheckCircle2, FileText, Calendar, MessageCircle, ChevronDown } from "lucide-react";
+import { CheckCircle2, FileText, Calendar, MessageCircle, ChevronDown, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
 
 const steps = [
   { n: "01", title: "Enquiry", desc: "Submit a quick form. We respond within 24 hours." },
@@ -29,10 +30,33 @@ const faqs = [
 
 export default function Admissions() {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
-  const onSubmit = (e: React.FormEvent) => {
+  const [submitting, setSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    parent_name: "", parent_phone: "", parent_email: "",
+    applicant_name: "", class_applying: "", notes: "",
+  });
+
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success("Application received. We'll be in touch within 24 hours.");
-    (e.target as HTMLFormElement).reset();
+    setSubmitting(true);
+
+    const { error } = await supabase.from("admissions").insert({
+      applicant_name: formData.applicant_name,
+      class_applying: formData.class_applying,
+      parent_name:    formData.parent_name,
+      parent_email:   formData.parent_email,
+      parent_phone:   formData.parent_phone,
+      notes:          formData.notes || null,
+      status:         "Pending",
+    });
+
+    if (error) {
+      toast.error("Failed to submit. Please try again.");
+    } else {
+      toast.success("Application received! We'll be in touch within 24 hours.");
+      setFormData({ parent_name: "", parent_phone: "", parent_email: "", applicant_name: "", class_applying: "", notes: "" });
+    }
+    setSubmitting(false);
   };
 
   return (
@@ -70,15 +94,32 @@ export default function Admissions() {
             <h2 className="display text-3xl md:text-4xl text-navy mb-8">Tell us about your child.</h2>
             <form onSubmit={onSubmit} className="space-y-5">
               <div className="grid md:grid-cols-2 gap-5">
-                <Field label="Parent / guardian name" name="parent" />
-                <Field label="Phone number" name="phone" type="tel" />
+                <div>
+                  <label className="block text-[11px] font-bold tracking-[0.2em] text-navy mb-2">PARENT / GUARDIAN NAME</label>
+                  <input required value={formData.parent_name} onChange={e => setFormData({...formData, parent_name: e.target.value})}
+                    className="w-full border border-navy/20 px-4 py-3 bg-white text-navy focus:outline-none focus:border-navy" />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold tracking-[0.2em] text-navy mb-2">PHONE NUMBER</label>
+                  <input type="tel" required value={formData.parent_phone} onChange={e => setFormData({...formData, parent_phone: e.target.value})}
+                    className="w-full border border-navy/20 px-4 py-3 bg-white text-navy focus:outline-none focus:border-navy" />
+                </div>
               </div>
-              <Field label="Email address" name="email" type="email" />
+              <div>
+                <label className="block text-[11px] font-bold tracking-[0.2em] text-navy mb-2">EMAIL ADDRESS</label>
+                <input type="email" required value={formData.parent_email} onChange={e => setFormData({...formData, parent_email: e.target.value})}
+                  className="w-full border border-navy/20 px-4 py-3 bg-white text-navy focus:outline-none focus:border-navy" />
+              </div>
               <div className="grid md:grid-cols-2 gap-5">
-                <Field label="Child's full name" name="child" />
+                <div>
+                  <label className="block text-[11px] font-bold tracking-[0.2em] text-navy mb-2">CHILD'S FULL NAME</label>
+                  <input required value={formData.applicant_name} onChange={e => setFormData({...formData, applicant_name: e.target.value})}
+                    className="w-full border border-navy/20 px-4 py-3 bg-white text-navy focus:outline-none focus:border-navy" />
+                </div>
                 <div>
                   <label className="block text-[11px] font-bold tracking-[0.2em] text-navy mb-2">CLASS APPLYING FOR</label>
-                  <select required className="w-full border border-navy/20 px-4 py-3 bg-white text-navy focus:outline-none focus:border-navy">
+                  <select required value={formData.class_applying} onChange={e => setFormData({...formData, class_applying: e.target.value})}
+                    className="w-full border border-navy/20 px-4 py-3 bg-white text-navy focus:outline-none focus:border-navy">
                     <option value="">Select a class</option>
                     <optgroup label="Primary">
                       <option>Nursery 1</option><option>Nursery 2</option><option>Reception</option>
@@ -94,10 +135,13 @@ export default function Admissions() {
               </div>
               <div>
                 <label className="block text-[11px] font-bold tracking-[0.2em] text-navy mb-2">ANYTHING WE SHOULD KNOW?</label>
-                <textarea rows={4} className="w-full border border-navy/20 px-4 py-3 bg-white text-navy focus:outline-none focus:border-navy" />
+                <textarea rows={4} value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})}
+                  className="w-full border border-navy/20 px-4 py-3 bg-white text-navy focus:outline-none focus:border-navy" />
               </div>
-              <button type="submit" className="bg-navy text-white px-8 py-4 font-bold text-sm tracking-wider hover:bg-navy/90 transition">
-                SUBMIT APPLICATION →
+              <button type="submit" disabled={submitting}
+                className="bg-navy text-white px-8 py-4 font-bold text-sm tracking-wider hover:bg-navy/90 transition flex items-center gap-2 disabled:opacity-60">
+                {submitting && <Loader2 size={16} className="animate-spin" />}
+                {submitting ? "SUBMITTING..." : "SUBMIT APPLICATION →"}
               </button>
             </form>
           </div>
