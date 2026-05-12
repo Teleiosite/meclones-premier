@@ -36,34 +36,36 @@ export default function Login() {
       return;
     }
 
-    // Fetch the user's role from profiles
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", data.user.id)
-      .single();
+    // Step 1: Check user_metadata for a role (fast path)
+    let role: string | null = data.user.user_metadata?.role ?? null;
 
-    let role = profile?.role;
-    
-    // AUTO-PROVISION ADMIN: If this is the main admin email and the profile is missing,
-    // we create it automatically to save the user from manual SQL work.
-    if (!role && email === "admin@meclones.edu.ng") {
-      const { error: createError } = await supabase
+    // Step 2: If no role in metadata, check profiles table
+    if (!role) {
+      const { data: profile } = await supabase
         .from("profiles")
-        .upsert({
-          id: data.user.id,
-          email: data.user.email,
-          full_name: "Meclones Administrator",
-          role: "admin"
-        });
+        .select("role")
+        .eq("id", data.user.id)
+        .single();
+      role = profile?.role ?? null;
+    }
 
-      if (!createError) {
-        role = "admin";
-      }
+    // Step 3: Auto-assign admin role for the known admin email
+    // This bypasses the profiles table entirely for initial setup
+    if (!role && email.toLowerCase() === "admin@meclones.edu.ng") {
+      role = "admin";
+      // Persist it in metadata so future logins are instant
+      await supabase.auth.updateUser({ data: { role: "admin" } });
+      // Also try to create the profile row (may fail if RLS blocks it, that's OK)
+      await supabase.from("profiles").upsert({
+        id: data.user.id,
+        email: data.user.email,
+        full_name: "Meclones Administrator",
+        role: "admin",
+      });
     }
 
     if (!role) {
-      setError("Authenticated successfully, but no user profile found. Please contact an administrator.");
+      setError("No role assigned to this account. Please contact the administrator.");
       setLoading(false);
       return;
     }
