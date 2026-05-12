@@ -43,13 +43,28 @@ export default function Login() {
       .eq("id", data.user.id)
       .single();
 
-    const role = profile?.role;
+    let role = profile?.role;
     
+    // AUTO-PROVISION ADMIN: If this is the main admin email and the profile is missing,
+    // we create it automatically to save the user from manual SQL work.
+    if (!role && email === "admin@meclones.edu.ng") {
+      const { error: createError } = await supabase
+        .from("profiles")
+        .upsert({
+          id: data.user.id,
+          email: data.user.email,
+          full_name: "Meclones Administrator",
+          role: "admin"
+        });
+
+      if (!createError) {
+        role = "admin";
+      }
+    }
+
     if (!role) {
-      setError("Authenticated successfully, but no user profile found. Please contact an administrator to assign your role.");
+      setError("Authenticated successfully, but no user profile found. Please contact an administrator.");
       setLoading(false);
-      // Optional: sign out if they shouldn't be in the app at all without a profile
-      // await supabase.auth.signOut();
       return;
     }
 
