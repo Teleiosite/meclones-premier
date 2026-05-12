@@ -1,38 +1,22 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl     = import.meta.env.VITE_SUPABASE_URL    as string | undefined;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+// Vite handles VITE_ prefixed variables automatically.
+// On Vercel, ensure these are added to Project Settings > Environment Variables.
+const supabaseUrl     = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-const MISSING_ENV = !supabaseUrl || !supabaseAnonKey;
+export const isMissingEnv = !supabaseUrl || !supabaseAnonKey;
 
-if (MISSING_ENV) {
-  console.error(
-    '[Meclones] CRITICAL: Supabase credentials are missing!\n' +
-    'Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your Vercel ' +
-    'environment variables and redeploy.'
-  );
-}
-
-// Use placeholder values so createClient does not throw during module load.
-// All Supabase calls will silently fail until real credentials are provided.
+// Create a safe client. If keys are missing, we use placeholder strings 
+// to prevent the createClient function itself from throwing an error.
 export const supabase = createClient(
-  supabaseUrl     ?? 'https://placeholder.supabase.co',
-  supabaseAnonKey ?? 'placeholder-anon-key'
+  supabaseUrl || 'https://placeholder-url.supabase.co',
+  supabaseAnonKey || 'placeholder-key'
 );
 
-export const isMissingEnv = MISSING_ENV;
-
-/** Fetch the current user's role from the profiles table. */
-export async function getUserRole(): Promise<string | null> {
-  if (MISSING_ENV) return null;
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-
-  const { data } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-
-  return data?.role ?? null;
+if (isMissingEnv) {
+  console.warn(
+    '[Meclones] Supabase keys are missing from environment variables. ' +
+    'The app will load but authentication and data fetching will fail.'
+  );
 }
