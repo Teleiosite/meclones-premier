@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, useEffect, type ReactNode } from "react";
 import {
   AlertTriangle,
   CalendarDays,
@@ -9,23 +9,24 @@ import {
   Shield,
   ShieldAlert,
   Wifi,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
 
 type TabKey = "surveillance" | "anomaly" | "policy";
 
-const classes = ["Primary 3A", "Primary 5A", "JSS 1A", "JSS 2B", "SS 1A", "SS 2B"];
+type AttendanceRow = {
+  id: string;
+  name: string;
+  present: boolean;
+  timeIn: string;
+  timeOut: string;
+  class: string;
+};
 
-const generateStudents = (cls: string) => [
-  { id: 1, name: "David Okafor", present: true, timeIn: "07:41 AM", timeOut: "03:21 PM", ip: "10.12.0.14" },
-  { id: 2, name: "Grace Okafor", present: true, timeIn: "07:43 AM", timeOut: "03:18 PM", ip: "10.12.0.21" },
-  { id: 3, name: "Amina Yusuf", present: false, timeIn: "ΓÇö", timeOut: "ΓÇö", ip: "ΓÇö" },
-  { id: 4, name: "Emeka Eze", present: true, timeIn: "07:49 AM", timeOut: "03:24 PM", ip: "10.12.0.17" },
-  { id: 5, name: "Fatima Bello", present: true, timeIn: "07:45 AM", timeOut: "03:16 PM", ip: "10.12.0.25" },
-  { id: 6, name: "Tunde Adesanya", present: false, timeIn: "ΓÇö", timeOut: "ΓÇö", ip: "ΓÇö" },
-  { id: 7, name: "Ngozi Nwosu", present: true, timeIn: "07:39 AM", timeOut: "03:26 PM", ip: "10.12.0.12" },
-  { id: 8, name: "Chukwudi Obi", present: true, timeIn: "07:46 AM", timeOut: "03:19 PM", ip: "10.12.0.18" },
-].map((s) => ({ ...s, class: cls }));
+const classOptions = ["All Classes", "Primary 3A", "Primary 5A", "JSS 1A", "JSS 2B", "SS 1A", "SS 2B"];
+
 
 const anomalyRows = [
   {
@@ -82,16 +83,61 @@ function PolicyCard({
 }
 
 export default function AdminAttendance() {
-  const [selectedClass, setSelectedClass] = useState(classes[0]);
-  const [students, setStudents] = useState(generateStudents(selectedClass));
+  const [selectedClass, setSelectedClass] = useState(classOptions[0]);
+  const [students, setStudents] = useState<AttendanceRow[]>([]);
+  const [loadingRows, setLoadingRows] = useState(true);
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [query, setQuery] = useState("");
   const [tab, setTab] = useState<TabKey>("surveillance");
 
+  // Load attendance records from Supabase
+  useEffect(() => {
+    async function load() {
+      setLoadingRows(true);
+      let q = supabase
+        .from("attendance")
+        .select(`
+          id,
+          date,
+          present,
+          check_in_time,
+          check_out_time,
+          class,
+          students ( profiles ( full_name ) )
+        `)
+        .eq("date", date)
+        .order("class");
+
+      if (selectedClass !== "All Classes") {
+        q = q.eq("class", selectedClass);
+      }
+
+      const { data, error } = await q;
+      if (error) {
+        toast.error("Failed to load attendance records.");
+        setLoadingRows(false);
+        return;
+      }
+
+      const rows: AttendanceRow[] = (data || []).map((r: any) => ({
+        id: r.id,
+        name: r.students?.profiles?.full_name ?? "Unknown",
+        present: r.present,
+        timeIn: r.check_in_time ? new Date(`${r.date}T${r.check_in_time}`).toLocaleTimeString("en-NG", { hour: "2-digit", minute: "2-digit" }) : "—",
+        timeOut: r.check_out_time ? new Date(`${r.date}T${r.check_out_time}`).toLocaleTimeString("en-NG", { hour: "2-digit", minute: "2-digit" }) : "—",
+        class: r.class ?? selectedClass,
+      }));
+
+      setStudents(rows);
+      setLoadingRows(false);
+    }
+    load();
+  }, [date, selectedClass]);
+
   const filteredRows = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return students;
-    return students.filter((row) => row.name.toLowerCase().includes(q) || row.id.toString().includes(q));
+    return students.filter((row) => row.name.toLowerCase().includes(q));
   }, [students, query]);
 
   const presentCount = students.filter((s) => s.present).length;
@@ -129,13 +175,10 @@ export default function AdminAttendance() {
             />
             <select
               value={selectedClass}
-              onChange={(e) => {
-                setSelectedClass(e.target.value);
-                setStudents(generateStudents(e.target.value));
-              }}
+              onChange={(e) => setSelectedClass(e.target.value)}
               className="border border-border bg-white px-4 py-3"
             >
-              {classes.map((c) => (
+              {classOptions.map((c) => (
                 <option key={c}>{c}</option>
               ))}
             </select>
@@ -150,10 +193,16 @@ export default function AdminAttendance() {
 
           <div className="bg-white border border-border overflow-hidden">
             <div className="grid grid-cols-7 text-[11px] tracking-[0.2em] uppercase text-muted-foreground font-bold border-b border-border px-6 py-4">
-              <div>Employee</div><div>Log Date</div><div>Clock In</div><div>Clock Out</div><div>Network IP</div><div>Outcome</div><div>Validation</div>
+              <div>Student</div><div>Log Date</div><div>Clock In</div><div>Clock Out</div><div>Class</div><div>Outcome</div><div>Validation</div>
             </div>
-            {filteredRows.length === 0 ? (
-              <div className="h-52 grid place-items-center text-muted-foreground italic">No check-in entries found.</div>
+            {loadingRows ? (
+              <div className="h-52 grid place-items-center">
+                <Loader2 size={22} className="animate-spin text-muted-foreground" />
+              </div>
+            ) : filteredRows.length === 0 ? (
+              <div className="h-52 grid place-items-center text-muted-foreground italic text-sm">
+                No attendance records found for {date}.
+              </div>
             ) : (
               filteredRows.map((row) => (
                 <div key={row.id} className="grid grid-cols-7 px-6 py-4 border-b border-border/60 text-sm items-center">
@@ -161,13 +210,13 @@ export default function AdminAttendance() {
                   <div>{date}</div>
                   <div>{row.timeIn}</div>
                   <div>{row.timeOut}</div>
-                  <div>{row.ip}</div>
-                  <div className={row.present ? "text-emerald-600 font-semibold" : "text-rose-500 font-semibold"}>{row.present ? "Verified" : "Failed"}</div>
+                  <div>{row.class}</div>
+                  <div className={row.present ? "text-emerald-600 font-semibold" : "text-rose-500 font-semibold"}>{row.present ? "Verified" : "Absent"}</div>
                   <div>{row.present ? "Pass" : "Review"}</div>
                 </div>
               ))
             )}
-            <div className="px-6 py-3 text-xs text-muted-foreground flex justify-between"><span>Real-time telemetry data</span><span>{filteredRows.length} log(s)</span></div>
+            <div className="px-6 py-3 text-xs text-muted-foreground flex justify-between"><span>Live data from Supabase</span><span>{filteredRows.length} record(s)</span></div>
           </div>
         </>
       )}
