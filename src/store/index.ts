@@ -39,6 +39,39 @@ export type TeacherAttendance = {
 
 // ─── Master data ─────────────────────────────────────────────────────────────
 
+/** Flat ordered class-name list used by Timetable dropdowns.
+ *  Slices: [0,2) = Nursery, [2,8) = Primary, [8,14) = JSS, [14+) = SS */
+export const CLASSES = [
+  // Nursery (0–1)
+  "Nursery 1", "Nursery 2",
+  // Primary (2–7)
+  "Primary 1", "Primary 2", "Primary 3", "Primary 4", "Primary 5", "Primary 6",
+  // Junior Secondary (8–13)
+  "JSS 1A", "JSS 1B", "JSS 2A", "JSS 2B", "JSS 3A", "JSS 3B",
+  // Senior Secondary (14+)
+  "SS 1A", "SS 1B", "SS 2A", "SS 2B", "SS 3A", "SS 3B",
+];
+
+/** Flat subject name list used by Timetable slot editor */
+export const SUBJECTS = [
+  "Mathematics",
+  "English Language",
+  "Physics",
+  "Chemistry",
+  "Biology",
+  "Computer Science",
+  "Geography",
+  "History",
+  "Civic Education",
+  "Agricultural Science",
+  "Economics",
+  "Further Mathematics",
+  "Literature in English",
+  "French",
+  "Fine Art",
+  "Music",
+];
+
 export const TEACHERS = [
   { id: "T-001", name: "Mr. Daniel Marko",    subject: "Mathematics" },
   { id: "T-002", name: "Mrs. Sarah James",    subject: "English" },
