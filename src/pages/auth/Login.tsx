@@ -37,13 +37,22 @@ export default function Login() {
     }
 
     // Fetch the user's role from profiles
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("role")
       .eq("id", data.user.id)
       .single();
 
     const role = profile?.role;
+    
+    if (!role) {
+      setError("Authenticated successfully, but no user profile found. Please contact an administrator to assign your role.");
+      setLoading(false);
+      // Optional: sign out if they shouldn't be in the app at all without a profile
+      // await supabase.auth.signOut();
+      return;
+    }
+
     const destination = from || ROLE_PATHS[role] || "/";
     navigate(destination, { replace: true });
   };
