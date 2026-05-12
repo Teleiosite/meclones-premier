@@ -163,6 +163,8 @@ interface AppState {
   removeClass: (id: string) => void;
   addSubject: (sub: Omit<AcademicSubject, "id">) => void;
   removeSubject: (id: string) => void;
+  setClasses: (classes: AcademicClass[]) => void;
+  setSubjects: (subjects: AcademicSubject[]) => void;
 }
 
 export const useStore = create<AppState>((set) => ({
@@ -222,4 +224,7 @@ export const useStore = create<AppState>((set) => ({
     set((state) => ({
       subjects: state.subjects.filter(s => s.id !== id)
     })),
+
+  setClasses: (classes) => set({ classes }),
+  setSubjects: (subjects) => set({ subjects }),
 }));

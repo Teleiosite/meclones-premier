@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Plus, 
   Search, 
@@ -17,9 +17,10 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useStore, TEACHERS } from "@/store";
+import { supabase } from "@/lib/supabase";
 
 export default function AdminAcademics() {
-  const { classes, subjects, addClass, removeClass, addSubject, removeSubject } = useStore();
+  const { classes, subjects, setClasses, setSubjects, addClass, removeClass, addSubject, removeSubject } = useStore();
   const [activeTab, setActiveTab] = useState<"classes" | "subjects" | "sessions">("classes");
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
@@ -32,6 +33,95 @@ export default function AdminAcademics() {
   const [newSubjectName, setNewSubjectName] = useState("");
   const [newSubPrimary, setNewSubPrimary] = useState(true);
   const [newSubSecondary, setNewSubSecondary] = useState(false);
+
+  useEffect(() => {
+    async function loadAcademicData() {
+      // 1. Fetch all students to count class sizes
+      const { data: studentsData } = await supabase.from("students").select("class");
+      
+      // 2. Fetch all timetable entries to get subjects and class subject counts
+      const { data: timetableData } = await supabase
+        .from("timetable")
+        .select(`subject, class_name, teachers ( profiles ( full_name ) )`);
+
+      // 3. Process Classes
+      const classMap: Record<string, any> = {};
+      
+      (studentsData || []).forEach((s: any) => {
+        if (!s.class) return;
+        if (!classMap[s.class]) {
+          classMap[s.class] = {
+            id: s.class,
+            name: s.class,
+            section: s.class.includes("Primary") || s.class.includes("Nursery") ? "PRIMARY" : "SECONDARY",
+            students: 0,
+            teacher: "Pending Assignment",
+            subjectsCount: 0,
+          };
+        }
+        classMap[s.class].students += 1;
+      });
+
+      // 4. Process Subjects & Class subjects
+      const subjectMap: Record<string, any> = {};
+      const classSubjects = new Map<string, Set<string>>();
+
+      (timetableData || []).forEach((t: any) => {
+        if (!t.subject) return;
+
+        // Populate class specific counts
+        if (t.class_name) {
+          if (!classMap[t.class_name]) {
+            classMap[t.class_name] = {
+              id: t.class_name,
+              name: t.class_name,
+              section: t.class_name.includes("Primary") || t.class_name.includes("Nursery") ? "PRIMARY" : "SECONDARY",
+              students: 0,
+              teacher: "Pending Assignment",
+              subjectsCount: 0,
+            };
+          }
+          if (!classSubjects.has(t.class_name)) classSubjects.set(t.class_name, new Set());
+          classSubjects.get(t.class_name)!.add(t.subject);
+        }
+
+        // Populate global subjects
+        if (!subjectMap[t.subject]) {
+          subjectMap[t.subject] = {
+            id: t.subject,
+            name: t.subject,
+            primary: false,
+            secondary: false,
+            teachers: [],
+          };
+        }
+
+        const isSec = t.class_name?.includes("SS") || t.class_name?.includes("JSS");
+        if (isSec) subjectMap[t.subject].secondary = true;
+        else subjectMap[t.subject].primary = true;
+
+        const teacherName = t.teachers?.profiles?.full_name;
+        if (teacherName && !subjectMap[t.subject].teachers.includes(teacherName)) {
+          subjectMap[t.subject].teachers.push(teacherName);
+        }
+      });
+
+      // Update classes with subject counts
+      Object.keys(classMap).forEach((className) => {
+        classMap[className].subjectsCount = classSubjects.get(className)?.size || 0;
+      });
+
+      // Only overwrite if we found data, else keep the initialized dummy store
+      if (Object.keys(classMap).length > 0) {
+        setClasses(Object.values(classMap).sort((a, b) => a.name.localeCompare(b.name)));
+      }
+      if (Object.keys(subjectMap).length > 0) {
+        setSubjects(Object.values(subjectMap).sort((a, b) => a.name.localeCompare(b.name)));
+      }
+    }
+    
+    loadAcademicData();
+  }, [setClasses, setSubjects]);
 
   const handleAddClass = (e: React.FormEvent) => {
     e.preventDefault();

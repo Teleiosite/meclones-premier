@@ -1,46 +1,91 @@
-import { useStore, TEACHERS } from "@/store";
+import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/hooks/useAuth";
+import { Loader2 } from "lucide-react";
 
 const DAYS = ["MON", "TUE", "WED", "THU", "FRI"];
 const TIMES = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00"];
 
-const TEACHER_ID = "T-001"; // Will come from auth in production
-const TEACHER = TEACHERS.find(t => t.id === TEACHER_ID)!;
+type SlotData = {
+  subject: string;
+  className: string;
+  room: string;
+  color: string;
+};
+type WeeklySchedule = Record<string, Record<string, SlotData | null>>;
 
 export default function TeacherTimetable() {
-  const { classTimetables } = useStore();
+  const { user } = useAuth();
+  const [schedule, setSchedule] = useState<WeeklySchedule>({});
+  const [loading, setLoading] = useState(true);
+  const [teacherProfile, setTeacherProfile] = useState<{ name: string; subject: string } | null>(null);
 
-  /**
-   * Build a personal schedule for this teacher by scanning every class.
-   * Result: schedule[time][day] = { subject, className, room, color } | null
-   */
-  const personalSchedule: Record<string, Record<string, { subject: string; className: string; room: string; color: string } | null>> = {};
+  const fetchTimetable = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
 
-  for (const time of TIMES) {
-    personalSchedule[time] = {};
-    for (const day of DAYS) {
-      personalSchedule[time][day] = null;
-      // Scan all classes for a slot assigned to this teacher
-      for (const [className, weekSchedule] of Object.entries(classTimetables)) {
-        const slot = weekSchedule[time]?.[day];
-        if (slot && slot.teacher === TEACHER_ID) {
-          personalSchedule[time][day] = {
-            subject: slot.subject,
-            className,
-            room: slot.room,
-            color: slot.color,
-          };
-          break;
-        }
-      }
+    // 1. Get teacher's internal ID
+    const { data: teacher } = await supabase
+      .from("teachers")
+      .select("id, subject_specialization, profiles!teachers_profile_id_fkey ( full_name )")
+      .eq("profile_id", user.id)
+      .single();
+
+    if (!teacher) {
+      setLoading(false);
+      return;
     }
+
+    setTeacherProfile({
+      name: teacher.profiles?.full_name ?? "Teacher",
+      subject: teacher.subject_specialization ?? "General",
+    });
+
+    // 2. Load timetable where teacher_id matches
+    const { data } = await supabase
+      .from("timetable")
+      .select("time_slot, day, subject, class_name, room, color")
+      .eq("teacher_id", teacher.id);
+
+    const newSchedule: WeeklySchedule = {};
+    for (const t of TIMES) {
+      newSchedule[t] = {};
+      for (const d of DAYS) newSchedule[t][d] = null;
+    }
+
+    (data || []).forEach((row: any) => {
+      if (newSchedule[row.time_slot] !== undefined) {
+        newSchedule[row.time_slot][row.day] = {
+          subject: row.subject,
+          className: row.class_name,
+          room: row.room ?? "TBD",
+          color: row.color ?? "bg-navy",
+        };
+      }
+    });
+
+    setSchedule(newSchedule);
+    setLoading(false);
+  }, [user]);
+
+  useEffect(() => {
+    fetchTimetable();
+  }, [fetchTimetable]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 size={28} className="animate-spin text-muted-foreground" />
+      </div>
+    );
   }
 
   // Count stats
   const totalPeriods = TIMES.filter(t => t !== "12:00").length * DAYS.length;
   const assignedPeriods = TIMES.filter(t => t !== "12:00").reduce((acc, t) =>
-    acc + DAYS.filter(d => !!personalSchedule[t]?.[d]).length, 0);
+    acc + DAYS.filter(d => !!schedule[t]?.[d]).length, 0);
   const uniqueClasses = new Set(
-    TIMES.flatMap(t => DAYS.map(d => personalSchedule[t]?.[d]?.className)).filter(Boolean)
+    TIMES.flatMap(t => DAYS.map(d => schedule[t]?.[d]?.className)).filter(Boolean)
   ).size;
 
   return (
@@ -50,7 +95,7 @@ export default function TeacherTimetable() {
         <div>
           <h1 className="font-display text-3xl font-black text-navy">My Timetable</h1>
           <p className="text-muted-foreground text-sm mt-0.5">
-            {TEACHER.name} · {TEACHER.subject} — Term 2, 2026
+            {teacherProfile?.name} · {teacherProfile?.subject} — Term 2, 2026
           </p>
         </div>
 
@@ -83,7 +128,7 @@ export default function TeacherTimetable() {
               <tr key={t} className="hover:bg-secondary/10 transition">
                 <td className="px-4 py-2 font-mono text-xs text-muted-foreground font-bold whitespace-nowrap">{t}</td>
                 {DAYS.map((d) => {
-                  const slot = personalSchedule[t]?.[d];
+                  const slot = schedule[t]?.[d];
                   const isBreak = t === "12:00";
                   return (
                     <td key={d} className="px-1.5 py-1.5 text-center">

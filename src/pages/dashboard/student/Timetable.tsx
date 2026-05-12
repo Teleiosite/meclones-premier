@@ -1,24 +1,88 @@
-import { useStore, TEACHERS } from "@/store";
+import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/hooks/useAuth";
+import { Loader2 } from "lucide-react";
 
 const DAYS = ["MON", "TUE", "WED", "THU", "FRI"];
 const TIMES = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00"];
 
-// In production this comes from the authenticated student's profile
-const STUDENT_CLASS = "JSS 1A";
-
-function getTeacherName(id: string): string {
-  return TEACHERS.find(t => t.id === id)?.name ?? id;
-}
+type SlotData = {
+  subject: string;
+  teacher: string;
+  room: string;
+  color: string;
+};
+type WeeklySchedule = Record<string, Record<string, SlotData | null>>;
 
 export default function StudentTimetable() {
-  const { classTimetables } = useStore();
-  const schedule = classTimetables[STUDENT_CLASS] ?? {};
+  const { user } = useAuth();
+  const [schedule, setSchedule] = useState<WeeklySchedule>({});
+  const [loading, setLoading] = useState(true);
+  const [studentClass, setStudentClass] = useState<string | null>(null);
+
+  const fetchTimetable = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+
+    // 1. Get student's class
+    const { data: student } = await supabase
+      .from("students")
+      .select("class")
+      .eq("profile_id", user.id)
+      .single();
+
+    if (!student || !student.class) {
+      setLoading(false);
+      return;
+    }
+
+    setStudentClass(student.class);
+
+    // 2. Load timetable for that class
+    const { data } = await supabase
+      .from("timetable")
+      .select("time_slot, day, subject, room, color, teachers ( profiles ( full_name ) )")
+      .eq("class_name", student.class);
+
+    const newSchedule: WeeklySchedule = {};
+    for (const t of TIMES) {
+      newSchedule[t] = {};
+      for (const d of DAYS) newSchedule[t][d] = null;
+    }
+
+    (data || []).forEach((row: any) => {
+      if (newSchedule[row.time_slot] !== undefined) {
+        newSchedule[row.time_slot][row.day] = {
+          subject: row.subject,
+          teacher: row.teachers?.profiles?.full_name ?? "TBD",
+          room: row.room ?? "TBD",
+          color: row.color ?? "bg-navy",
+        };
+      }
+    });
+
+    setSchedule(newSchedule);
+    setLoading(false);
+  }, [user]);
+
+  useEffect(() => {
+    fetchTimetable();
+  }, [fetchTimetable]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 size={28} className="animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   // Count periods and subjects
   const periods = TIMES.filter(t => t !== "12:00").reduce((acc, t) =>
     acc + DAYS.filter(d => !!schedule[t]?.[d]).length, 0);
-  const subjects = new Set(
-    TIMES.flatMap(t => DAYS.map(d => schedule[t]?.[d]?.subject)).filter(Boolean)
+  
+  const subjects = new Set<string>(
+    TIMES.flatMap(t => DAYS.map(d => schedule[t]?.[d]?.subject)).filter(Boolean) as string[]
   );
 
   return (
@@ -28,7 +92,7 @@ export default function StudentTimetable() {
         <div>
           <h1 className="font-display text-3xl font-black text-navy">My Timetable</h1>
           <p className="text-muted-foreground text-sm mt-0.5">
-            {STUDENT_CLASS} weekly class schedule — Term 2, 2026
+            {studentClass ? `${studentClass} weekly class schedule` : "Class schedule"}
           </p>
         </div>
         <div className="flex gap-3">
@@ -70,7 +134,7 @@ export default function StudentTimetable() {
                       ) : slot ? (
                         <div className={`${slot.color} text-white px-2 py-2 rounded text-left`}>
                           <div className="text-[11px] font-bold leading-tight truncate">{slot.subject}</div>
-                          <div className="text-[10px] opacity-80 mt-0.5 truncate">{getTeacherName(slot.teacher)}</div>
+                          <div className="text-[10px] opacity-80 mt-0.5 truncate">{slot.teacher}</div>
                           <div className="text-[10px] opacity-60 mt-0.5">{slot.room}</div>
                         </div>
                       ) : (

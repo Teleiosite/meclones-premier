@@ -525,9 +525,9 @@ The admin teacher management page then streams live clock-in events.
 - Use **Recharts** (already installed) to chart real attendance/grade data fetched from Supabase
 - Add PDF export using `jsPDF` or `@react-pdf/renderer` for student result slips and teacher attendance reports
 
-#### 9. Timetable Persistence
+#### 9. Timetable Persistence (✅ COMPLETED)
 **What:** Timetable edits made by admin live only in Zustand (lost on refresh).
-**How:** Wire `setTimetableSlot` in Zustand to also write to `timetable_slots` table in Supabase. Load from Supabase on app init.
+**How:** Replaced with full Supabase integration reading from/writing to `timetable` table for Admin, Teacher, and Student views.
 
 #### 10. Fee Payment Integration
 **What:** Fees page shows records but has no payment gateway.
@@ -618,9 +618,10 @@ npm run dev
 | `npm run test` | Run Vitest test suite once |
 | `npm run test:watch` | Run Vitest in watch mode |
 
-### Demo Credentials (Current UI-only Login)
+### Authentication & Roles (✅ LIVE via Supabase)
 
-The login page accepts any input and routes based on the selected role. No password is validated yet.
+The platform is fully integrated with Supabase Auth and Role-Based Access Control. 
+Users are routed to their respective dashboards based on their assigned `role` in the `profiles` table.
 
 | Role | Route after login |
 |---|---|
