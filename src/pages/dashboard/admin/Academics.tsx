@@ -11,36 +11,78 @@ import {
   TrendingUp,
   School,
   FileText,
-  Save
+  Save,
+  Trash2,
+  X
 } from "lucide-react";
 import { toast } from "sonner";
-
-// Master Data (Would come from DB/Store in production)
-const INITIAL_SUBJECTS = [
-  { id: "S1", name: "Mathematics", primary: true, secondary: true, teachers: ["Mr. Daniel Marko"], classes: 8 },
-  { id: "S2", name: "English Language", primary: true, secondary: true, teachers: ["Mrs. Sarah James"], classes: 9 },
-  { id: "S3", name: "Basic Science", primary: true, secondary: false, teachers: ["Mrs. Grace Nwosu"], classes: 4 },
-  { id: "S4", name: "Physics", primary: false, secondary: true, teachers: ["Mr. Peter Obi"], classes: 3 },
-  { id: "S5", name: "Chemistry", primary: false, secondary: true, teachers: ["Mr. Victor Ade"], classes: 3 },
-];
-
-const INITIAL_CLASSES = [
-  { id: "C1", name: "Nursery 1", section: "PRIMARY", students: 18, subjects: 6, teacher: "Mrs. Ngozi" },
-  { id: "C2", name: "JSS 1", section: "SECONDARY", students: 35, subjects: 12, teacher: "Mr. Adams" },
-  { id: "C3", name: "SS 1", section: "SECONDARY", students: 28, subjects: 15, teacher: "Mr. Benson" },
-];
+import { useStore, TEACHERS } from "@/store";
 
 export default function AdminAcademics() {
+  const { classes, subjects, addClass, removeClass, addSubject, removeSubject } = useStore();
   const [activeTab, setActiveTab] = useState<"classes" | "subjects" | "sessions">("classes");
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
+
+  // Form states for modals
+  const [newClassName, setNewClassName] = useState("");
+  const [newClassSection, setNewClassSection] = useState<"PRIMARY" | "SECONDARY">("PRIMARY");
+  const [newClassTeacher, setNewClassTeacher] = useState("");
+
+  const [newSubjectName, setNewSubjectName] = useState("");
+  const [newSubPrimary, setNewSubPrimary] = useState(true);
+  const [newSubSecondary, setNewSubSecondary] = useState(false);
+
+  const handleAddClass = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newClassName || !newClassTeacher) {
+      toast.error("Please fill all fields");
+      return;
+    }
+    addClass({
+      name: newClassName,
+      section: newClassSection,
+      teacher: newClassTeacher,
+      students: 0,
+      subjectsCount: 0
+    });
+    setNewClassName("");
+    setShowAddModal(false);
+    toast.success(`${newClassName} added successfully`);
+  };
+
+  const handleAddSubject = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newSubjectName) {
+      toast.error("Please enter a subject name");
+      return;
+    }
+    addSubject({
+      name: newSubjectName,
+      primary: newSubPrimary,
+      secondary: newSubSecondary,
+      teachers: []
+    });
+    setNewSubjectName("");
+    setShowAddModal(false);
+    toast.success(`${newSubjectName} curriculum created`);
+  };
+
+  const filteredClasses = classes.filter(c => 
+    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.section.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredSubjects = subjects.filter(s =>
+    s.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="space-y-6">
       {/* Header with Global Actions */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="font-display text-3xl font-black text-navy">Academic Hub</h1>
+          <h1 className="font-display text-3xl font-black text-navy uppercase tracking-tight">Academic Hub</h1>
           <p className="text-muted-foreground text-sm">Manage school structure, subjects, and student progression.</p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -70,8 +112,11 @@ export default function AdminAcademics() {
         ].map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
-            className={`flex items-center gap-2 px-6 py-3 text-xs font-bold transition-all relative ${
+            onClick={() => {
+              setActiveTab(tab.id as any);
+              setSearchQuery("");
+            }}
+            className={`flex items-center gap-2 px-6 py-4 text-xs font-bold transition-all relative whitespace-nowrap ${
               activeTab === tab.id 
                 ? "text-navy" 
                 : "text-muted-foreground hover:text-navy hover:bg-secondary/10"
@@ -89,12 +134,12 @@ export default function AdminAcademics() {
       {/* Main Content Area */}
       <div className="space-y-4">
         {/* Search & Filter Bar */}
-        <div className="flex items-center gap-3 bg-white border border-border px-4 py-2">
+        <div className="flex items-center gap-3 bg-white border border-border px-4 py-2 shadow-sm focus-within:border-navy transition-colors">
           <Search size={18} className="text-muted-foreground" />
           <input 
             type="text" 
             placeholder={`Search ${activeTab}...`}
-            className="flex-1 bg-transparent border-none text-sm focus:outline-none"
+            className="flex-1 bg-transparent border-none text-sm focus:outline-none py-2"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -102,17 +147,25 @@ export default function AdminAcademics() {
 
         {activeTab === "classes" && (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {INITIAL_CLASSES.map((cls) => (
-              <div key={cls.id} className="group bg-white border border-border hover:border-navy transition overflow-hidden">
+            {filteredClasses.map((cls) => (
+              <div key={cls.id} className="group bg-white border border-border hover:border-navy transition overflow-hidden shadow-sm">
                 <div className="p-5">
                   <div className="flex justify-between items-start mb-3">
                     <div>
                       <div className="text-[10px] font-black tracking-widest text-gold mb-1">{cls.section}</div>
                       <h3 className="font-display text-xl font-black text-navy">{cls.name}</h3>
                     </div>
-                    <button className="text-muted-foreground hover:text-navy p-1 transition">
-                      <MoreVertical size={18} />
-                    </button>
+                    <div className="flex gap-1">
+                      <button 
+                        onClick={() => {
+                          removeClass(cls.id);
+                          toast.error(`${cls.name} removed`);
+                        }}
+                        className="text-muted-foreground hover:text-rose-600 p-1.5 transition rounded-md hover:bg-rose-50"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4 mt-6 border-t border-border pt-4">
@@ -122,7 +175,7 @@ export default function AdminAcademics() {
                     </div>
                     <div className="flex items-center gap-2">
                       <BookOpen size={14} className="text-accent" />
-                      <div className="text-xs font-bold text-navy">{cls.subjects} <span className="text-muted-foreground font-normal">Subjects</span></div>
+                      <div className="text-xs font-bold text-navy">{cls.subjectsCount} <span className="text-muted-foreground font-normal">Subjects</span></div>
                     </div>
                   </div>
 
@@ -140,11 +193,18 @@ export default function AdminAcademics() {
                 </button>
               </div>
             ))}
+            {filteredClasses.length === 0 && (
+              <div className="col-span-full py-20 text-center bg-white border border-dashed border-border rounded-lg">
+                <School size={48} className="mx-auto text-muted-foreground/20 mb-4" />
+                <p className="text-muted-foreground font-medium">No classes found matching "{searchQuery}"</p>
+                <button onClick={() => setSearchQuery("")} className="text-accent text-xs font-bold mt-2 hover:underline">Clear Search</button>
+              </div>
+            )}
           </div>
         )}
 
         {activeTab === "subjects" && (
-          <div className="bg-white border border-border overflow-hidden">
+          <div className="bg-white border border-border overflow-hidden shadow-sm">
             <table className="w-full text-sm">
               <thead className="bg-secondary/40 border-b border-border">
                 <tr className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">
@@ -156,34 +216,50 @@ export default function AdminAcademics() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {INITIAL_SUBJECTS.map((sub) => (
+                {filteredSubjects.map((sub) => (
                   <tr key={sub.id} className="hover:bg-secondary/10 transition group">
                     <td className="px-6 py-4 font-bold text-navy">{sub.name}</td>
                     <td className="px-6 py-4 text-xs text-muted-foreground">
-                      {sub.teachers.join(", ")}
+                      {sub.teachers.length > 0 ? sub.teachers.join(", ") : "Unassigned"}
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <div className={`mx-auto w-2 h-2 rounded-full ${sub.primary ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-border"}`} />
+                      <div className={`mx-auto w-2.5 h-2.5 rounded-full ${sub.primary ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-border"}`} />
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <div className={`mx-auto w-2 h-2 rounded-full ${sub.secondary ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-border"}`} />
+                      <div className={`mx-auto w-2.5 h-2.5 rounded-full ${sub.secondary ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-border"}`} />
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button className="p-2 text-muted-foreground hover:text-navy hover:bg-secondary rounded transition"><FileText size={16} /></button>
-                        <button className="p-2 text-muted-foreground hover:text-rose-600 hover:bg-rose-50 rounded transition"><MoreVertical size={16} /></button>
+                      <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button className="p-2 text-muted-foreground hover:text-navy hover:bg-secondary rounded transition" title="Edit Curriculum"><FileText size={16} /></button>
+                        <button 
+                          onClick={() => {
+                            removeSubject(sub.id);
+                            toast.error(`${sub.name} deleted`);
+                          }}
+                          className="p-2 text-muted-foreground hover:text-rose-600 hover:bg-rose-50 rounded transition"
+                          title="Delete Subject"
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       </div>
                     </td>
                   </tr>
                 ))}
+                {filteredSubjects.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="py-20 text-center text-muted-foreground font-medium italic">
+                      No subjects found matching your query.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
         )}
 
         {activeTab === "sessions" && (
-          <div className="max-w-2xl bg-white border border-border p-8 mx-auto text-center space-y-6">
-            <div className="w-16 h-16 bg-navy/5 text-navy rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="max-w-2xl bg-white border border-border p-8 mx-auto text-center space-y-6 shadow-sm">
+            <div className="w-16 h-16 bg-navy/5 text-navy rounded-full flex items-center justify-center mx-auto mb-4 border border-navy/10">
               <Settings2 size={32} />
             </div>
             <div>
@@ -194,33 +270,136 @@ export default function AdminAcademics() {
             <div className="grid grid-cols-2 gap-4 text-left mt-8">
               <div className="space-y-1">
                 <label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">Current Session</label>
-                <div className="p-3 border border-border font-bold text-navy flex justify-between items-center">
+                <div className="p-3 border border-border font-bold text-navy flex justify-between items-center cursor-pointer hover:border-navy transition">
                   2025/2026 Academic Year
                   <ChevronRight size={14} className="text-gold" />
                 </div>
               </div>
               <div className="space-y-1">
                 <label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">Active Term</label>
-                <div className="p-3 border border-border font-bold text-navy flex justify-between items-center">
+                <div className="p-3 border border-border font-bold text-navy flex justify-between items-center cursor-pointer hover:border-navy transition">
                   Second Term
                   <ChevronRight size={14} className="text-gold" />
                 </div>
               </div>
             </div>
 
-            <button className="flex items-center gap-2 bg-navy text-gold px-8 py-3 text-xs font-black tracking-widest mx-auto shadow-lg hover:translate-y-[-2px] transition-transform">
+            <button 
+              onClick={() => toast.success("Academic settings updated")}
+              className="flex items-center gap-2 bg-navy text-gold px-8 py-3 text-xs font-black tracking-widest mx-auto shadow-lg hover:translate-y-[-2px] transition-all active:scale-95"
+            >
               <Save size={16} /> SAVE SETTINGS
             </button>
           </div>
         )}
       </div>
 
+      {/* Add Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/80 backdrop-blur-sm p-4">
+          <div className="bg-white w-full max-w-md p-6 shadow-2xl relative">
+            <button 
+              onClick={() => setShowAddModal(false)}
+              className="absolute top-4 right-4 text-muted-foreground hover:text-navy transition"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="mb-6">
+              <h2 className="font-display text-2xl font-black text-navy uppercase tracking-tight">
+                {activeTab === "classes" ? "New Class" : "New Subject"}
+              </h2>
+              <p className="text-muted-foreground text-xs mt-1">Fill in the details to expand your academic structure.</p>
+            </div>
+
+            <form onSubmit={activeTab === "classes" ? handleAddClass : handleAddSubject} className="space-y-4">
+              {activeTab === "classes" ? (
+                <>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">Class Name</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. JSS 3C"
+                      className="w-full p-3 border border-border text-sm focus:outline-none focus:border-navy font-bold text-navy"
+                      value={newClassName}
+                      onChange={(e) => setNewClassName(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">Section</label>
+                    <select 
+                      className="w-full p-3 border border-border text-sm focus:outline-none focus:border-navy font-bold text-navy"
+                      value={newClassSection}
+                      onChange={(e) => setNewClassSection(e.target.value as any)}
+                    >
+                      <option value="PRIMARY">PRIMARY</option>
+                      <option value="SECONDARY">SECONDARY</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">Lead Teacher</label>
+                    <select 
+                      className="w-full p-3 border border-border text-sm focus:outline-none focus:border-navy font-bold text-navy"
+                      value={newClassTeacher}
+                      onChange={(e) => setNewClassTeacher(e.target.value)}
+                    >
+                      <option value="">Select Teacher</option>
+                      {TEACHERS.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
+                    </select>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">Subject Title</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. Further Mathematics"
+                      className="w-full p-3 border border-border text-sm focus:outline-none focus:border-navy font-bold text-navy"
+                      value={newSubjectName}
+                      onChange={(e) => setNewSubjectName(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex gap-4 pt-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={newSubPrimary}
+                        onChange={(e) => setNewSubPrimary(e.target.checked)}
+                        className="w-4 h-4 accent-navy"
+                      />
+                      <span className="text-xs font-bold text-navy">Primary Section</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={newSubSecondary}
+                        onChange={(e) => setNewSubSecondary(e.target.checked)}
+                        className="w-4 h-4 accent-navy"
+                      />
+                      <span className="text-xs font-bold text-navy">Secondary Section</span>
+                    </label>
+                  </div>
+                </>
+              )}
+
+              <button 
+                type="submit"
+                className="w-full py-4 bg-navy text-gold text-xs font-black tracking-widest hover:bg-navy/90 transition shadow-lg mt-4"
+              >
+                CONFIRM AND SAVE
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Stats Summary Footer */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-6 border-t border-border">
         {[
-          { label: "Total Classes", value: "15", icon: School },
-          { label: "Active Subjects", value: "24", icon: BookOpen },
-          { label: "Avg Class Size", value: "26.4", icon: Users },
+          { label: "Total Classes", value: classes.length.toString(), icon: School },
+          { label: "Active Subjects", value: subjects.length.toString(), icon: BookOpen },
+          { label: "Avg Class Size", value: (classes.reduce((acc, c) => acc + c.students, 0) / (classes.length || 1)).toFixed(1), icon: Users },
           { label: "Curriculum Score", value: "92%", icon: GraduationCap },
         ].map((stat, i) => (
           <div key={i} className="flex flex-col">
