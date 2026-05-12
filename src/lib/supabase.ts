@@ -1,22 +1,35 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Vite handles VITE_ prefixed variables automatically.
-// On Vercel, ensure these are added to Project Settings > Environment Variables.
-const supabaseUrl     = import.meta.env.VITE_SUPABASE_URL;
+// Get environment variables
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-export const isMissingEnv = !supabaseUrl || !supabaseAnonKey;
+// Diagnostic check: Are they valid strings starting with http?
+const isValidUrl = typeof supabaseUrl === 'string' && supabaseUrl.startsWith('http');
+const hasKey = typeof supabaseAnonKey === 'string' && supabaseAnonKey.length > 0;
 
-// Create a safe client. If keys are missing, we use placeholder strings 
-// to prevent the createClient function itself from throwing an error.
-export const supabase = createClient(
-  supabaseUrl || 'https://placeholder-url.supabase.co',
-  supabaseAnonKey || 'placeholder-key'
-);
+export const isMissingEnv = !isValidUrl || !hasKey;
 
-if (isMissingEnv) {
-  console.warn(
-    '[Meclones] Supabase keys are missing from environment variables. ' +
-    'The app will load but authentication and data fetching will fail.'
+/**
+ * We wrap the client creation. 
+ * If keys are missing, we return a 'dummy' proxy object that doesn't 
+ * throw errors but also doesn't do anything, allowing the UI to render.
+ */
+let client: any;
+
+if (!isMissingEnv) {
+  client = createClient(supabaseUrl, supabaseAnonKey);
+} else {
+  // Return a proxy that swallows calls to prevent crashes in the UI
+  client = new Proxy({}, {
+    get: () => () => ({ data: null, error: { message: 'Supabase not initialized' } })
+  });
+  
+  console.error(
+    '[Meclones] Supabase Configuration Error:\n' +
+    `URL Valid: ${isValidUrl} (${supabaseUrl})\n` +
+    `Key Valid: ${hasKey}`
   );
 }
+
+export const supabase = client;
