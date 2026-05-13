@@ -33,22 +33,16 @@ if (!isMissingEnv) {
     isMissingEnv = true; // Trigger the red diagnostic indicator on screen
   }
 } else {
-  const message =
+  // SAFE FALLBACK: Never throw — a throw here causes a white screen in production.
+  // Instead, use a proxy that returns graceful errors so the UI can still render.
+  // The red `SUPABASE_CONFIG_MISSING` banner in main.tsx will alert the developer.
+  client = createProxy('Supabase not initialized — check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Vercel.');
+
+  console.error(
     '[Meclones] Supabase Configuration Error:\n' +
-    `URL Fixed: ${supabaseUrl}\n` +
-    `Key Valid: ${hasKey}`;
-
-  if (import.meta.env.PROD) {
-    throw new Error(message);
-  }
-
-  // Development/test fallback keeps local tooling from crashing, while production
-  // fails fast so a misconfigured Vercel deployment cannot masquerade as online.
-  client = new Proxy({}, {
-    get: () => () => ({ data: null, error: { message: 'Supabase not initialized' } })
-  });
-
-  console.error(message);
+    `URL: ${supabaseUrl}\n` +
+    `Key present: ${hasKey}`
+  );
 }
 
 export const supabase = client;
