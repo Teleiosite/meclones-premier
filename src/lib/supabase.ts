@@ -1,30 +1,40 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Get environment variables
-let supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Get environment variables and strip any accidental quotes added in Vercel UI
+let rawUrl = import.meta.env.VITE_SUPABASE_URL?.replace(/^["']|["']$/g, '').trim();
+let rawKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.replace(/^["']|["']$/g, '').trim();
 
 // AUTO-FIX: If the user only provided the Project ID (e.g. 'cbnuquviujgbxyanhssv')
 // we convert it into a full valid URL.
+let supabaseUrl = rawUrl;
 if (supabaseUrl && !supabaseUrl.startsWith('http')) {
   supabaseUrl = `https://${supabaseUrl}.supabase.co`;
 }
 
 // Diagnostic check
-const isValidUrl = typeof supabaseUrl === 'string' && supabaseUrl.startsWith('http');
-const hasKey = typeof supabaseAnonKey === 'string' && supabaseAnonKey.length > 0;
+let isValidUrl = typeof supabaseUrl === 'string' && supabaseUrl.startsWith('http');
+const hasKey = typeof rawKey === 'string' && rawKey.length > 0;
 
-export const isMissingEnv = !isValidUrl || !hasKey;
+export let isMissingEnv = !isValidUrl || !hasKey;
 
 let client: any;
 
+const createProxy = (errMsg: string) => new Proxy({}, {
+  get: () => () => ({ data: null, error: { message: errMsg } })
+});
+
 if (!isMissingEnv) {
-  client = createClient(supabaseUrl!, supabaseAnonKey!);
+  try {
+    // Attempt to initialize. This will throw if the URL is completely malformed (e.g. invalid chars).
+    client = createClient(supabaseUrl!, rawKey!);
+  } catch (err) {
+    console.error("[Meclones] Supabase initialization threw an error:", err);
+    client = createProxy('Supabase initialization failed due to malformed URL or Key.');
+    isMissingEnv = true; // Trigger the red diagnostic indicator on screen
+  }
 } else {
   // Proxy fallback to prevent crashes
-  client = new Proxy({}, {
-    get: () => () => ({ data: null, error: { message: 'Supabase not initialized' } })
-  });
+  client = createProxy('Supabase not initialized');
   
   console.error(
     '[Meclones] Supabase Configuration Error:\n' +
@@ -34,3 +44,4 @@ if (!isMissingEnv) {
 }
 
 export const supabase = client;
+
