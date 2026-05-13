@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 
 type Child = {
   id: string;
-  student_number: string;
+  admission_no: string;
   full_name: string;
   class: string;
   status: string;
@@ -40,19 +40,19 @@ export default function ParentChildren() {
     const { data: students } = await supabase
       .from("students")
       .select(`
-        id, student_number, class, status,
+        id, admission_no, class, status,
         profiles!students_profile_id_fkey ( full_name, id )
       `)
       .eq("parent_id", parent.id)
       .eq("status", "Active");
 
     const mapped: Child[] = (students || []).map((s: any) => ({
-      id:             s.id,
-      student_number: s.student_number ?? "—",
-      full_name:      s.profiles?.full_name ?? "—",
-      class:          s.class ?? "—",
-      status:         s.status,
-      profile_id:     s.profiles?.id,
+      id:           s.id,
+      admission_no: s.admission_no ?? "—",
+      full_name:    s.profiles?.full_name ?? "—",
+      class:        s.class ?? "—",
+      status:       s.status,
+      profile_id:   s.profiles?.id,
     }));
     setChildren(mapped);
 
@@ -132,7 +132,7 @@ export default function ParentChildren() {
                   </div>
                   <div className="flex-1">
                     <div className="font-display text-2xl font-black">{child.full_name}</div>
-                    <div className="text-white/70 text-sm mt-1">{child.class} · {child.student_number}</div>
+                    <div className="text-white/70 text-sm mt-1">{child.class} · {child.admission_no}</div>
                   </div>
                   <div className="flex gap-6 text-center">
                     <div>

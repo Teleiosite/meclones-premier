@@ -7,7 +7,7 @@ import { toast } from "sonner";
 type AttendanceRecord = {
   id: string;
   date: string;
-  present: boolean;
+  status: "Present" | "Absent" | "Late";
   child_name: string;
 };
 
@@ -21,8 +21,8 @@ type ChildStat = {
 
 const statusStyle: Record<string, string> = {
   Present: "bg-emerald-100 text-emerald-700",
-  Absent: "bg-red-100 text-red-600",
-  Late: "bg-amber-100 text-amber-700",
+  Absent:  "bg-red-100 text-red-600",
+  Late:    "bg-amber-100 text-amber-700",
 };
 
 export default function ParentAttendance() {
@@ -59,7 +59,7 @@ export default function ParentAttendance() {
     // Fetch attendance for all children
     const { data: attendance, error } = await supabase
       .from("attendance")
-      .select("id, date, present, student_id")
+      .select("id, date, status, student_id")
       .in("student_id", childIds)
       .order("date", { ascending: false })
       .limit(50);
@@ -68,9 +68,9 @@ export default function ParentAttendance() {
 
     // Map records
     const mapped: AttendanceRecord[] = (attendance || []).map((a: any) => ({
-      id: a.id,
-      date: new Date(a.date).toLocaleDateString("en-NG", { weekday: "short", day: "numeric", month: "short" }),
-      present: a.present,
+      id:         a.id,
+      date:       new Date(a.date).toLocaleDateString("en-NG", { weekday: "short", day: "numeric", month: "short" }),
+      status:     (a.status as "Present" | "Absent" | "Late") ?? "Absent",
       child_name: nameMap[a.student_id] ?? "Unknown",
     }));
     setRecords(mapped);
@@ -80,15 +80,16 @@ export default function ParentAttendance() {
     children.forEach((c: any) => {
       const name = nameMap[c.id];
       const childRecords = (attendance || []).filter((a: any) => a.student_id === c.id);
-      const presentCount = childRecords.filter((a: any) => a.present).length;
-      const absentCount = childRecords.filter((a: any) => !a.present).length;
+      const presentCount = childRecords.filter((a: any) => a.status === "Present").length;
+      const absentCount  = childRecords.filter((a: any) => a.status === "Absent").length;
+      const lateCount    = childRecords.filter((a: any) => a.status === "Late").length;
       const total = childRecords.length;
       statsMap[name] = {
         name,
         present: presentCount,
-        absent: absentCount,
-        late: 0, // 'late' not tracked separately yet
-        rate: total > 0 ? Math.round((presentCount / total) * 100) : 0,
+        absent:  absentCount,
+        late:    lateCount,
+        rate:    total > 0 ? Math.round((presentCount / total) * 100) : 0,
       };
     });
     setStats(Object.values(statsMap));
@@ -151,8 +152,8 @@ export default function ParentAttendance() {
                       <div className="font-semibold text-navy text-sm">{r.child_name}</div>
                       <div className="text-xs text-muted-foreground">{r.date}</div>
                     </div>
-                    <span className={`text-[10px] font-bold px-3 py-1 ${r.present ? statusStyle["Present"] : statusStyle["Absent"]}`}>
-                      {r.present ? "PRESENT" : "ABSENT"}
+                    <span className={`text-[10px] font-bold px-3 py-1 ${statusStyle[r.status]}`}>
+                      {r.status.toUpperCase()}
                     </span>
                   </div>
                 ))

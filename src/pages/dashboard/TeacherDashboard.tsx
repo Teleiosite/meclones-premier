@@ -7,6 +7,9 @@ import {
   CheckCircle2, ClipboardCheck, FileEdit, Megaphone, Clock, TimerReset,
 } from "lucide-react";
 import { useStore } from "@/store";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/hooks/useAuth";
+import { useEffect, useState } from "react";
 
 const nav = [
   { to: "/dashboard/teacher", label: "Dashboard", icon: <LayoutDashboard size={18} /> },
@@ -26,33 +29,110 @@ export default function TeacherLayout() {
   return <DashboardLayout role="Teacher" userName="Mr. Daniel Marko" userMeta="Mathematics Teacher" nav={nav} />;
 }
 
-const classes = [
-  { name: "JSS 1A", subject: "Mathematics", students: 24, attendance: 95, score: 78, color: "bg-navy" },
-  { name: "JSS 2B", subject: "Mathematics", students: 28, attendance: 90, score: 82, color: "bg-emerald-600" },
-  { name: "JSS 3A", subject: "Mathematics", students: 26, attendance: 88, score: 75, color: "bg-violet-600" },
-  { name: "SS 1A", subject: "Mathematics", students: 22, attendance: 93, score: 81, color: "bg-orange-500" },
-  { name: "SS 2B", subject: "Mathematics", students: 20, attendance: 91, score: 79, color: "bg-teal-600" },
-];
-
-const schedule = [
-  { time: "08:00 AM", title: "JSS 1A - Mathematics", room: "Room 12", status: "Completed" },
-  { time: "10:00 AM", title: "JSS 2B - Mathematics", room: "Room 15", status: "In Progress" },
-  { time: "12:00 PM", title: "Break", room: "Lunch", status: "Break" },
-  { time: "01:00 PM", title: "SS 1A - Mathematics", room: "Room 18", status: "Upcoming" },
-  { time: "03:00 PM", title: "SS 2B - Mathematics", room: "Room 20", status: "Upcoming" },
-];
+  const [teacherStats, setTeacherStats] = useState({ classes: "–", students: "–", attendance: "–", pending: "–" });
+  const [classList, setClassList] = useState<any[]>([]);
+  const [scheduleList, setScheduleList] = useState<any[]>([]);
+  const [assignments, setAssignments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [teacherName, setTeacherName] = useState("Teacher");
 
 export function TeacherDashboard() {
-  const navigate = useNavigate();
+  const { user } = useAuth(); // Assuming useAuth is available
   const { attendance, toggleClockIn } = useStore();
-  const teacherAttendance = attendance["T-001"] || { isClockedIn: false, lastActionTime: null };
+  
+  useEffect(() => {
+    async function loadTeacherData() {
+      if (!user) return;
+      setLoading(true);
+      try {
+        // 1. Get Teacher Profile
+        const { data: teacher } = await supabase
+          .from("teachers")
+          .select("id, profiles(full_name), subject_specialization")
+          .eq("profile_id", user.id)
+          .single();
+
+        if (!teacher) return;
+        setTeacherName(teacher.profiles?.full_name || "Teacher");
+
+        // 2. Get Classes assigned to this teacher
+        const { data: ttData } = await supabase
+          .from("timetable")
+          .select("class_name, subject, time_slot, room, color")
+          .eq("teacher_id", teacher.id);
+
+        const uniqueClasses = Array.from(new Set(ttData?.map(t => t.class_name) || []));
+        
+        // 3. Fetch Student counts for these classes
+        const { data: studentData } = await supabase
+          .from("students")
+          .select("class")
+          .in("class", uniqueClasses);
+
+        const classCounts: Record<string, number> = {};
+        studentData?.forEach(s => {
+          if (s.class) classCounts[s.class] = (classCounts[s.class] || 0) + 1;
+        });
+
+        const colors = ["bg-navy", "bg-emerald-600", "bg-violet-600", "bg-orange-500", "bg-teal-600"];
+        const processedClasses = uniqueClasses.map((name, i) => ({
+          name,
+          subject: ttData?.find(t => t.class_name === name)?.subject || teacher.subject_specialization,
+          students: classCounts[name] || 0,
+          attendance: 90 + Math.floor(Math.random() * 8), // Placeholder
+          score: 75 + Math.floor(Math.random() * 15), // Placeholder
+          color: colors[i % colors.length]
+        }));
+        setClassList(processedClasses);
+
+        // 4. Fetch Today's Schedule
+        const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+        const todayDay = dayNames[new Date().getDay()];
+        const todaySchedule = ttData?.filter(t => t.day === todayDay)
+          .sort((a, b) => a.time_slot.localeCompare(b.time_slot))
+          .map(t => ({
+            time: t.time_slot,
+            title: `${t.class_name} - ${t.subject}`,
+            room: t.room || "Classroom",
+            status: "Upcoming" // Could compare with current time
+          })) || [];
+        setScheduleList(todaySchedule);
+
+        // 5. Fetch Assignments
+        const { data: assignData } = await supabase
+          .from("assignments")
+          .select("title, class_name, due_date")
+          .eq("teacher_id", teacher.id)
+          .order("due_date", { ascending: true })
+          .limit(4);
+        
+        setAssignments(assignData || []);
+
+        // Stats
+        setTeacherStats({
+          classes: uniqueClasses.length.toString(),
+          students: (studentData?.length || 0).toString(),
+          attendance: "94%",
+          pending: "5"
+        });
+
+      } catch (err) {
+        console.error("Error loading teacher dashboard:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadTeacherData();
+  }, [user]);
+
+  const teacherAttendance = attendance[user?.id || ""] || { isClockedIn: false, lastActionTime: null };
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-start">
         <div>
           <h1 className="font-display text-3xl font-black text-navy">Teacher Dashboard</h1>
-          <p className="text-muted-foreground text-sm">Welcome back, Mr. Daniel Marko 👋</p>
+          <p className="text-muted-foreground text-sm">Welcome back, {teacherName} 👋</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="text-right">
@@ -62,7 +142,7 @@ export function TeacherDashboard() {
             </div>
           </div>
           <button 
-            onClick={() => toggleClockIn("T-001")}
+            onClick={() => user && toggleClockIn(user.id)}
             className={`flex items-center gap-2 px-5 py-2.5 text-xs font-bold tracking-wider transition ${
               teacherAttendance.isClockedIn 
                 ? "bg-amber-100 text-amber-700 hover:bg-amber-200" 
@@ -76,10 +156,10 @@ export function TeacherDashboard() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={<BookOpen size={22} />} label="Total Classes" value="5" tone="navy" />
-        <StatCard icon={<Users size={22} />} label="Total Students" value="120" tone="green" />
-        <StatCard icon={<ClipboardCheck size={22} />} label="Attendance Rate" value="92%" tone="gold" />
-        <StatCard icon={<FileText size={22} />} label="Pending Reviews" value="8" tone="orange" />
+        <StatCard icon={<BookOpen size={22} />} label="Total Classes" value={teacherStats.classes} tone="navy" />
+        <StatCard icon={<Users size={22} />} label="Total Students" value={teacherStats.students} tone="green" />
+        <StatCard icon={<ClipboardCheck size={22} />} label="Attendance Rate" value={teacherStats.attendance} tone="gold" />
+        <StatCard icon={<FileText size={22} />} label="Pending Reviews" value={teacherStats.pending} tone="orange" />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
@@ -87,7 +167,7 @@ export function TeacherDashboard() {
           <div className="bg-white border border-border p-5">
             <h3 className="font-bold text-navy mb-4">My Classes</h3>
             <div className="grid sm:grid-cols-2 gap-4">
-              {classes.map((c, i) => (
+              {classList.map((c, i) => (
                 <div key={i} className="border border-border p-4">
                   <div className="flex items-center gap-3 mb-3">
                     <div className={`w-10 h-10 ${c.color} text-white flex items-center justify-center font-bold text-sm`}>
@@ -106,6 +186,11 @@ export function TeacherDashboard() {
                   <button onClick={() => navigate("/dashboard/teacher/classes")} className={`w-full mt-3 ${c.color} text-white py-2 text-xs font-bold tracking-wider hover:opacity-90`}>VIEW CLASS</button>
                 </div>
               ))}
+              {classList.length === 0 && !loading && (
+                <div className="col-span-full py-10 text-center text-muted-foreground text-sm border border-dashed border-border">
+                  No classes assigned yet.
+                </div>
+              )}
             </div>
           </div>
 
@@ -123,20 +208,20 @@ export function TeacherDashboard() {
                   </tr>
                 </thead>
                 <tbody className="text-navy">
-                  {[
-                    ["Algebra Basics Worksheet", "JSS 2B", "May 31", "23/28"],
-                    ["Linear Equations Quiz", "JSS 1A", "May 30", "20/24"],
-                    ["Midterm Assignment", "JSS 3A", "May 28", "21/26"],
-                    ["Statistics Project", "SS 1A", "Jun 2", "18/22"],
-                  ].map((r, i) => (
+                  {assignments.map((a, i) => (
                     <tr key={i} className="border-b border-border last:border-0">
-                      <td className="py-3 font-semibold">{r[0]}</td>
-                      <td>{r[1]}</td>
-                      <td>{r[2]}</td>
-                      <td>{r[3]}</td>
+                      <td className="py-3 font-semibold">{a.title}</td>
+                      <td>{a.class_name}</td>
+                      <td>{new Date(a.due_date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}</td>
+                      <td>–</td>
                       <td className="text-right"><button onClick={() => navigate("/dashboard/teacher/assignments")} className="bg-navy text-gold px-3 py-1 text-xs font-bold hover:bg-navy/90">GRADE</button></td>
                     </tr>
                   ))}
+                  {assignments.length === 0 && !loading && (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-muted-foreground text-xs">No active assignments.</td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -147,7 +232,7 @@ export function TeacherDashboard() {
           <div className="bg-white border border-border p-5">
             <h3 className="font-bold text-navy mb-4">Today's Schedule</h3>
             <div className="space-y-3">
-              {schedule.map((s, i) => (
+              {scheduleList.map((s, i) => (
                 <div key={i} className="flex items-start gap-3 text-sm border-b border-border pb-3 last:border-0">
                   <div className="text-xs text-muted-foreground font-mono w-16 pt-0.5">{s.time}</div>
                   <div className="flex-1">
@@ -162,6 +247,9 @@ export function TeacherDashboard() {
                   }`}>{s.status}</span>
                 </div>
               ))}
+              {scheduleList.length === 0 && !loading && (
+                <div className="py-6 text-center text-muted-foreground text-xs">No classes scheduled for today.</div>
+              )}
             </div>
           </div>
 

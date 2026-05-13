@@ -32,3 +32,4 @@ dist-ssr
 # Vite temporary files
 vite.config.ts.timestamp-*
 
+.vercel
