@@ -6,7 +6,6 @@ import {
   Award, Calendar, MessageSquare, BarChart3, Settings,
   CheckCircle2, ClipboardCheck, FileEdit, Megaphone, Clock, TimerReset,
 } from "lucide-react";
-import { useStore } from "@/store";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
@@ -29,16 +28,16 @@ export default function TeacherLayout() {
   return <DashboardLayout role="Teacher" userName="Mr. Daniel Marko" userMeta="Mathematics Teacher" nav={nav} />;
 }
 
+export function TeacherDashboard() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [isClockedIn, setIsClockedIn] = useState(false);
   const [teacherStats, setTeacherStats] = useState({ classes: "–", students: "–", attendance: "–", pending: "–" });
   const [classList, setClassList] = useState<any[]>([]);
   const [scheduleList, setScheduleList] = useState<any[]>([]);
   const [assignments, setAssignments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [teacherName, setTeacherName] = useState("Teacher");
-
-export function TeacherDashboard() {
-  const { user } = useAuth(); // Assuming useAuth is available
-  const { attendance, toggleClockIn } = useStore();
   
   useEffect(() => {
     async function loadTeacherData() {
@@ -98,7 +97,18 @@ export function TeacherDashboard() {
           })) || [];
         setScheduleList(todaySchedule);
 
-        // 5. Fetch Assignments
+        // 5. Fetch today's clock-in state from persisted table
+        const today = new Date().toISOString().split("T")[0];
+        const { data: todayClock } = await supabase
+          .from("teacher_clockin")
+          .select("id, clock_in, clock_out")
+          .eq("teacher_id", teacher.id)
+          .eq("date", today)
+          .maybeSingle();
+
+        setIsClockedIn(!!todayClock?.clock_in && !todayClock?.clock_out);
+
+        // 6. Fetch Assignments
         const { data: assignData } = await supabase
           .from("assignments")
           .select("title, class_name, due_date")
@@ -125,7 +135,6 @@ export function TeacherDashboard() {
     loadTeacherData();
   }, [user]);
 
-  const teacherAttendance = attendance[user?.id || ""] || { isClockedIn: false, lastActionTime: null };
 
   return (
     <div className="space-y-6">
@@ -137,20 +146,20 @@ export function TeacherDashboard() {
         <div className="flex items-center gap-3">
           <div className="text-right">
             <div className="text-xs text-muted-foreground font-bold tracking-wider">STATUS</div>
-            <div className={`text-sm font-bold ${teacherAttendance.isClockedIn ? "text-emerald-600" : "text-amber-600"}`}>
-              {teacherAttendance.isClockedIn ? "Clocked In" : "Clocked Out"}
+            <div className={`text-sm font-bold ${isClockedIn ? "text-emerald-600" : "text-amber-600"}`}>
+              {isClockedIn ? "Clocked In" : "Clocked Out"}
             </div>
           </div>
           <button 
-            onClick={() => user && toggleClockIn(user.id)}
+            onClick={() => navigate("/dashboard/teacher/clockin-clockout")}
             className={`flex items-center gap-2 px-5 py-2.5 text-xs font-bold tracking-wider transition ${
-              teacherAttendance.isClockedIn 
+              isClockedIn 
                 ? "bg-amber-100 text-amber-700 hover:bg-amber-200" 
                 : "bg-emerald-600 text-white hover:bg-emerald-700"
             }`}
           >
             <Clock size={16} />
-            {teacherAttendance.isClockedIn ? "CLOCK OUT" : "CLOCK IN"}
+            {isClockedIn ? "CLOCK OUT" : "CLOCK IN"}
           </button>
         </div>
       </div>
