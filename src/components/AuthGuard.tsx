@@ -2,24 +2,65 @@ import { useEffect, useState } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 
-/**
- * AuthGuard — wraps all /dashboard/* routes.
- * Redirects unauthenticated users to /login.
- * Preserves the attempted URL so we can redirect back after login.
- */
+type UserRole = "admin" | "teacher" | "student" | "parent";
+
+const roleRoutePrefix: Record<UserRole, string> = {
+  admin: "/dashboard/admin",
+  teacher: "/dashboard/teacher",
+  student: "/dashboard/student",
+  parent: "/dashboard/parent",
+};
+
+function normalizeRole(role?: string | null): UserRole | null {
+  if (!role) return null;
+  const normalized = role.trim().toLowerCase();
+  if (normalized === "admin" || normalized === "teacher" || normalized === "student" || normalized === "parent") {
+    return normalized;
+  }
+  return null;
+}
+
 export default function AuthGuard() {
   const [checking, setChecking] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
   const location = useLocation();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    async function syncSessionAndRole() {
+      const { data: { session } } = await supabase.auth.getSession();
       setAuthenticated(!!session);
-      setChecking(false);
-    });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user?.id) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", session.user.id)
+          .single();
+
+        setUserRole(normalizeRole(profile?.role));
+      } else {
+        setUserRole(null);
+      }
+
+      setChecking(false);
+    }
+
+    syncSessionAndRole();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setAuthenticated(!!session);
+      if (session?.user?.id) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", session.user.id)
+          .single();
+        setUserRole(normalizeRole(profile?.role));
+      } else {
+        setUserRole(null);
+      }
+      setChecking(false);
     });
 
     return () => subscription.unsubscribe();
@@ -38,6 +79,13 @@ export default function AuthGuard() {
 
   if (!authenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (location.pathname.startsWith("/dashboard") && userRole) {
+    const allowedPrefix = roleRoutePrefix[userRole];
+    if (!location.pathname.startsWith(allowedPrefix)) {
+      return <Navigate to={allowedPrefix} replace />;
+    }
   }
 
   return <Outlet />;
