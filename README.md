@@ -19,7 +19,23 @@ As of this audit, the app is **not yet production-ready for financial and attend
 - Supabase client initialization and query patterns
 - Attendance and fee-tracking data flows
 - Realtime/concurrency behavior
-- Infrastructure fit for Cloudflare Pages + Supabase (Lagos 4G users)
+- Infrastructure fit for Vercel + Supabase (Lagos 4G users)
+
+---
+
+
+## Deployment Architecture (Confirmed)
+
+- **Frontend:** Vercel (React/Vite build output, CDN edge delivery).
+- **Backend:** Supabase (Postgres, Auth, RLS, Storage, Realtime where needed).
+- **Payments Integration:** Paystack webhook handled in a trusted server runtime (prefer Supabase Edge Function; Vercel Serverless also viable).
+
+### Platform Notes for Vercel + Supabase
+
+1. Keep all sensitive operations (webhook verification, payment reconciliation, privileged writes) off the browser and in server-side functions.
+2. Frontend route guards improve UX only; true authorization must be enforced with Supabase RLS policies.
+3. Use Vercel environment variables for public client keys and never expose service-role keys in frontend bundles.
+4. Prefer Supabase RPC/views for KPI aggregates to reduce round-trips and improve 4G performance.
 
 ---
 
