@@ -89,7 +89,7 @@ As of this audit, the app is **not yet production-ready for financial and attend
 
 - ✅ Implemented role-based route guard and cross-role redirect in `AuthGuard` (May 13, 2026).
 - ✅ Replaced UI-only teacher dashboard clock-in indicator with persisted `teacher_clockin` state (May 13, 2026).
-- Enforce strict RLS ownership checks on attendance and teacher clock-in rows.
+- ✅ Added app-layer ownership guardrails for teacher attendance/clock-out paths (while full DB-level RLS SQL validation remains pending).
 - ✅ Resolved `TeacherDashboard.tsx` hook placement/state initialization consistency issue (May 13, 2026).
 
 ### P1 (Next Sprint)
@@ -130,7 +130,7 @@ As of this audit, the app is **not yet production-ready for financial and attend
 Mark **GO** only when all are true:
 
 - [x] Role-enforced route authorization implemented in `AuthGuard` (frontend route-level).
-- [ ] RLS policies validated for all touched tables
+- [ ] RLS policies validated for all touched tables (app-layer checks tightened; SQL policy verification still pending)
 - [ ] Webhook signature/idempotency live in production
 - [ ] Financial KPIs server-aggregated and reconciled
 - [ ] Attendance conflict handling and audit trails enabled (partial: dashboard clock status now reads persisted state)
