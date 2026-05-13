@@ -81,7 +81,11 @@ export default function AuthGuard() {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (location.pathname.startsWith("/dashboard") && userRole) {
+  if (location.pathname.startsWith("/dashboard")) {
+    if (!userRole) {
+      return <Navigate to="/login" replace state={{ reason: "role_not_configured" }} />;
+    }
+
     const allowedPrefix = roleRoutePrefix[userRole];
     if (!location.pathname.startsWith(allowedPrefix)) {
       return <Navigate to={allowedPrefix} replace />;

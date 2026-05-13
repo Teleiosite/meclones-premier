@@ -49,7 +49,7 @@ export default function TeacherAttendance() {
 
   // Load students for selected class
   const loadStudents = useCallback(async () => {
-    if (!selectedClass) return;
+    if (!selectedClass || !teacherId) return;
     setLoadingStudents(true);
     const { data } = await supabase
       .from("students")
