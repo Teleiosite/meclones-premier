@@ -1,96 +1,140 @@
 # Meclones Academy — School Management Platform
 
-> A full-featured, role-based school management system for a premium Nigerian combined school (Nursery–SS3). Built with React 18, TypeScript, Vite 5, Tailwind CSS, shadcn/ui, and Supabase. **Fully production-ready with live data persistence and real-time messaging.**
+> Independent code audit summary (May 13, 2026). This README reflects the current implementation status based on `src/` inspection, not prior self-assessment.
 
 ---
 
-## Project Overview
+## Executive Summary
 
-Meclones Academy is a **premium combined school** in Lagos, Nigeria. This platform manages all school operations across four distinct user roles, each with a dedicated, live-data dashboard.
+**Short answer:** fixing the issues from the audit will make the app **materially closer** to production, but production readiness also depends on non-code and operational controls (monitoring, incident response, backups, key rotation, SLOs, load testing, etc.).
 
-| Role | Portal Route | Primary Purpose |
-|---|---|---|
-| **Admin** | `/dashboard/admin` | School-wide management, admissions, academics, and finances |
-| **Teacher** | `/dashboard/teacher` | Class management, attendance, grading, and clock-in/out |
-| **Student** | `/dashboard/student` | Academic courses, results, timetable, and assignments |
-| **Parent** | `/dashboard/parent` | Children performance monitoring, fees, and attendance |
+As of this audit, the app is **not yet production-ready for financial and attendance-critical workflows** due to gaps in RBAC enforcement, data integrity guarantees, and concurrency handling.
 
 ---
 
-## Tech Stack
+## Audit Scope
 
-| Category | Technology |
-|---|---|
-| **Framework** | React 18 + TypeScript |
-| **Build Tool** | Vite 5 |
-| **Backend** | Supabase (PostgreSQL + Auth + RLS) |
-| **Styling** | Tailwind CSS + Custom HSL Tokens |
-| **Components** | shadcn/ui (Radix UI) |
-| **State** | Zustand (local UI) + Supabase (global persistence) |
-| **Real-time** | Supabase Realtime (Messaging & Notifications) |
+- React dashboards and route protection
+- Zustand state usage and persistence boundaries
+- Supabase client initialization and query patterns
+- Attendance and fee-tracking data flows
+- Realtime/concurrency behavior
+- Infrastructure fit for Vercel + Supabase (Lagos 4G users)
 
 ---
 
-## Key Achievements (Persistence Finalized)
 
-The platform has transitioned from a mock UI to a **fully data-driven application**:
+## Deployment Architecture (Confirmed)
 
-### ✅ Authentication & RBAC
-- [x] Live Supabase Auth integration with role-based routing.
-- [x] Protected routes for Admin, Teacher, Student, and Parent portals.
+- **Frontend:** Vercel (React/Vite build output, CDN edge delivery).
+- **Backend:** Supabase (Postgres, Auth, RLS, Storage, Realtime where needed).
+- **Payments Integration:** Paystack webhook handled in a trusted server runtime (prefer Supabase Edge Function; Vercel Serverless also viable).
 
-### ✅ Messaging System (Cross-Portal)
-- [x] **Universal Inbox:** Real-time messaging between Students, Teachers, Parents, and Admins.
-- [x] Functional "Compose", "Reply", and "Mark as Read" features.
-- [x] Persistent message history stored in Supabase.
+### Platform Notes for Vercel + Supabase
 
-### ✅ Academic & Student Management
-- [x] **Admissions:** Live approval workflow; status updates reflected instantly.
-- [x] **Academics:** Dynamic class and curriculum management.
-- [x] **Attendance:** Automated attendance logging for both Teachers (Clock-in) and Students.
-- [x] **Results:** Live grading and termly report aggregation.
-
-### ✅ Financial Tracking
-- [x] **Fees:** Real-time payment tracking and outstanding balance calculation.
-- [x] **Export:** CSV export functionality for all major data tables.
+1. Keep all sensitive operations (webhook verification, payment reconciliation, privileged writes) off the browser and in server-side functions.
+2. Frontend route guards improve UX only; true authorization must be enforced with Supabase RLS policies.
+3. Use Vercel environment variables for public client keys and never expose service-role keys in frontend bundles.
+4. Prefer Supabase RPC/views for KPI aggregates to reduce round-trips and improve 4G performance.
 
 ---
 
-## Getting Started (Local Dev)
+## Key Findings
 
-### Prerequisites
-- Node.js 18+
-- npm 9+
+### 1) Data Integrity
 
-### Setup
+- Teacher daily student attendance is persisted via `upsert(student_id, date)` (good baseline idempotency).
+- Teacher dashboard has a separate **UI-only clock-in/out state** in Zustand that is not persisted, while a different page writes to `teacher_clockin`; this creates dual sources of truth.
+- Fee dashboard calculates major financial totals in the client, which is not ledger-grade and can drift from authoritative accounting semantics.
+- “Remind” action is currently UI-only (toast), not an audited outbound workflow.
 
-```bash
-# Clone
-git clone https://github.com/Teleiosite/meclones-premier.git
-cd meclones-premier
+### 2) Security & RBAC
 
-# Install dependencies
-npm install
+- Protected route currently checks only whether a user is authenticated, not whether they are authorized for a specific role route.
+- Role is fetched in auth hook but not enforced by route guard.
+- If RLS policies are permissive, users may access or mutate out-of-scope records by direct API manipulation.
 
-# Configure Environment
-# Create a .env file with your Supabase credentials:
-# VITE_SUPABASE_URL=https://your-project.supabase.co
-# VITE_SUPABASE_ANON_KEY=your-anon-key
+### 3) Concurrency & Realtime
 
-# Start dev server
-npm run dev
-```
+- No Supabase Realtime subscriptions were found in core attendance/fees state paths.
+- Simultaneous writes risk last-write-wins behavior without conflict awareness/audit diff.
+- Admin metrics can become stale between users/sessions until refresh.
 
----
+### 4) Infra & Mobile Performance
 
-## Road to Production (Next Steps)
-
-While the core data flow is persistent, the following items are scheduled for future sprints:
-
-1. **PDF Generation:** Implementation of `jsPDF` for generating downloadable report cards.
-2. **Push Notifications:** Webhook integration for SMS/Email notifications on fee payments.
-3. **Advanced Analytics:** Deeper Recharts integration for academic trend analysis.
+- Dashboard pages issue multi-query loading patterns; this will be expensive on metered 4G.
+- Nested relational selects in large tables may increase latency and payload size.
+- Lack of server-side KPI pre-aggregation increases client work and round trips.
 
 ---
 
-*Meclones Academy School Management Platform — Built with ❤️ for Nigerian education excellence.*
+## Remaining Requirements (Must-Have Before Production)
+
+1. **Role-aware route authorization** (not just authenticated session checks).
+2. **Verified table-by-table RLS policies** and policy tests.
+3. **Server-side financial aggregates** (RPC/views), not client-only arithmetic.
+4. **Attendance conflict strategy** (versioning/event log + reconciliation UI).
+5. **Audit logs** for attendance edits, payment state transitions, and reminders.
+6. **Webhook security** (Paystack signature verification, idempotency, replay-safe processing).
+7. **Error boundaries + centralized API error handling**.
+8. **Observability** (structured logs, traces, alerting, Sentry or equivalent).
+9. **Backups + DR** (restore drills and retention policy).
+10. **Performance controls** (pagination, selective fields, caching, image optimization).
+
+---
+
+## Critical Fix Plan
+
+### P0 (Immediate)
+
+- Implement role-based route guard and deny cross-role dashboard access.
+- Remove/replace UI-only teacher dashboard clock-in state with server-backed state only.
+- Enforce strict RLS ownership checks on attendance and teacher clock-in rows.
+- Resolve structural issue in `TeacherDashboard.tsx` (hook placement consistency).
+
+### P1 (Next Sprint)
+
+- Replace fee KPI calculations with DB-backed RPC/view outputs.
+- Add append-only audit trail for attendance and payment changes.
+- Add conflict-aware save semantics for attendance edits.
+
+### P2
+
+- Add targeted realtime invalidation for critical dashboards.
+- Optimize payloads and query fan-out (pagination, field projection).
+- Add mobile-network-focused UX fallbacks (skeletons + stale-safe indicators).
+
+---
+
+## Production Recommendation
+
+### Paystack Webhooks
+
+- Handle webhooks in a trusted backend (Edge Function/Worker).
+- Verify signature before processing.
+- Enforce idempotency on transaction reference.
+- Write raw payload + normalized payment rows transactionally.
+- Emit post-commit events for dashboard invalidation/realtime updates.
+
+### Offline-First Attendance
+
+- Queue attendance intents in IndexedDB with deterministic IDs.
+- Sync via a conflict-aware server endpoint when online.
+- Keep immutable event history for reconciliation.
+- Show explicit sync states: `pending`, `synced`, `conflict`.
+
+---
+
+## Production Readiness Gate (Go/No-Go)
+
+Mark **GO** only when all are true:
+
+- [ ] Role-enforced route authorization implemented and tested
+- [ ] RLS policies validated for all touched tables
+- [ ] Webhook signature/idempotency live in production
+- [ ] Financial KPIs server-aggregated and reconciled
+- [ ] Attendance conflict handling and audit trails enabled
+- [ ] Monitoring/alerting + backup restore drill completed
+- [ ] Mobile performance budgets met under Lagos 4G test conditions
+
+If any item is unchecked, release should be **NO-GO** for production-critical usage.
