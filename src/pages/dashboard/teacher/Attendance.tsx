@@ -1,14 +1,14 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { CheckCircle2, XCircle, Loader2, Save, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
-import { logAttendanceChanges } from "@/lib/rpc";
+import { submitAttendanceBatch } from "@/lib/rpc";
 
 type Student = {
   id: string;
   full_name: string;
-  present: boolean;
+  present: boolean | null;
 };
 
 export default function TeacherAttendance() {
@@ -22,8 +22,6 @@ export default function TeacherAttendance() {
   const [saving, setSaving]       = useState(false);
   const [loadingStudents, setLoadingStudents] = useState(false);
   const [lastSaved, setLastSaved] = useState<string | null>(null);
-  // Snapshot of statuses as they were when loaded from DB (for audit diffing)
-  const prevStatusRef = useRef<Record<string, string>>({});
 
   // Fetch teacher's ID and their classes
   useEffect(() => {
@@ -64,7 +62,7 @@ export default function TeacherAttendance() {
     const mapped: Student[] = (data || []).map((s: any) => ({
       id:        s.id,
       full_name: s.profiles?.full_name ?? "Unnamed Student",
-      present:   true, // default to present
+      present:   null, // require an explicit mark before saving
     }));
 
     // Check if attendance already saved for this class+date
@@ -82,13 +80,6 @@ export default function TeacherAttendance() {
         mapped.forEach(s => {
           if (map[s.id]) s.present = map[s.id] === "Present";
         });
-        // Store the loaded state as the baseline for audit diffing
-        prevStatusRef.current = Object.fromEntries(
-          mapped.map(s => [s.id, s.present ? "Present" : "Absent"])
-        );
-      } else {
-        // No prior record — mark all as new (old_status = null)
-        prevStatusRef.current = {};
       }
     }
 
@@ -98,54 +89,60 @@ export default function TeacherAttendance() {
 
   useEffect(() => { loadStudents(); }, [loadStudents]);
 
-  const toggle = (id: string) =>
-    setStudents(prev => prev.map(s => s.id === id ? { ...s, present: !s.present } : s));
+  useEffect(() => {
+    if (!teacherId || !selectedClass) return;
 
-  const presentCount = students.filter(s => s.present).length;
+    const channel = supabase
+      .channel(`teacher-attendance-${teacherId}-${selectedClass}-${date}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "attendance", filter: `date=eq.${date}` }, () => {
+        loadStudents();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [teacherId, selectedClass, date, loadStudents]);
+
+  const toggle = (id: string) =>
+    setStudents(prev => prev.map(s => {
+      if (s.id !== id) return s;
+      if (s.present === null) return { ...s, present: true };
+      return { ...s, present: !s.present };
+    }));
+
+  const presentCount = students.filter(s => s.present === true).length;
+  const unmarkedCount = students.filter(s => s.present === null).length;
 
   const handleSave = async () => {
     if (!teacherId || students.length === 0) return;
+    if (unmarkedCount > 0) {
+      toast.error(`Please mark all students before saving. ${unmarkedCount} still unmarked.`);
+      return;
+    }
     setSaving(true);
 
     const records = students.map(s => ({
       student_id: s.id,
-      date,
-      status:     s.present ? "Present" : "Absent",
-      marked_by:  teacherId,
+      status: s.present === true ? "Present" as const : "Absent" as const,
     }));
 
-    // Upsert — update if already exists for that student+date
-    const { error } = await supabase
-      .from("attendance")
-      .upsert(records, { onConflict: "student_id,date" });
+    // Server-authoritative RPC validates teacher/class/student ownership,
+    // writes attendance, and inserts audit entries in one transaction.
+    const { data, error } = await submitAttendanceBatch({
+      className: selectedClass,
+      date,
+      records,
+    });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(error);
     } else {
       const savedAt = new Date();
-      toast.success(`Attendance saved for ${selectedClass} — ${presentCount}/${students.length} present.`);
+      const savedPresent = data?.present_count ?? presentCount;
+      const savedTotal = data?.saved_count ?? students.length;
+      toast.success(`Attendance saved for ${selectedClass} — ${savedPresent}/${savedTotal} present.`);
       setLastSaved(savedAt.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
-
-      // ── Write immutable audit log (non-blocking) ──────────────────
-      const auditEntries = students.map(s => {
-        const newStatus  = s.present ? "Present" : "Absent";
-        const oldStatus  = prevStatusRef.current[s.id] ?? null; // null = first time
-        return {
-          student_id: s.id,
-          teacher_id: teacherId,
-          date,
-          old_status: oldStatus,
-          new_status: newStatus,
-          note: `Saved via ${selectedClass} attendance sheet`,
-        };
-      });
-      // Fire-and-forget — won't block UI on audit failure
-      logAttendanceChanges(auditEntries);
-
-      // Update baseline so subsequent saves diff correctly
-      prevStatusRef.current = Object.fromEntries(
-        students.map(s => [s.id, s.present ? "Present" : "Absent"])
-      );
     }
     setSaving(false);
   };
@@ -204,13 +201,13 @@ export default function TeacherAttendance() {
             <div className="grid sm:grid-cols-2 gap-3 mb-6">
               {students.map((s) => (
                 <button key={s.id} onClick={() => toggle(s.id)}
-                  className={`flex items-center gap-3 p-3 border text-left transition ${s.present ? "border-emerald-300 bg-emerald-50" : "border-red-200 bg-red-50"}`}>
-                  {s.present
+                  className={`flex items-center gap-3 p-3 border text-left transition ${s.present === null ? "border-amber-200 bg-amber-50" : s.present ? "border-emerald-300 bg-emerald-50" : "border-red-200 bg-red-50"}`}>
+                  {s.present === true
                     ? <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
-                    : <XCircle size={18} className="text-red-400 shrink-0" />}
-                  <span className={`text-sm font-medium ${s.present ? "text-emerald-800" : "text-red-700"}`}>{s.full_name}</span>
-                  <span className={`ml-auto text-[10px] font-bold ${s.present ? "text-emerald-600" : "text-red-500"}`}>
-                    {s.present ? "PRESENT" : "ABSENT"}
+                    : <XCircle size={18} className={`${s.present === null ? "text-amber-500" : "text-red-400"} shrink-0`} />}
+                  <span className={`text-sm font-medium ${s.present === null ? "text-amber-700" : s.present ? "text-emerald-800" : "text-red-700"}`}>{s.full_name}</span>
+                  <span className={`ml-auto text-[10px] font-bold ${s.present === null ? "text-amber-600" : s.present ? "text-emerald-600" : "text-red-500"}`}>
+                    {s.present === null ? "UNMARKED" : s.present ? "PRESENT" : "ABSENT"}
                   </span>
                 </button>
               ))}
@@ -230,7 +227,7 @@ export default function TeacherAttendance() {
               </div>
               {lastSaved && (
                 <p className="flex items-center gap-1.5 text-[11px] text-emerald-600">
-                  <Clock size={11} /> Last saved at {lastSaved} — changes logged to audit trail
+                  <Clock size={11} /> Last saved at {lastSaved} — server validated and audited
                 </p>
               )}
             </div>

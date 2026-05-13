@@ -3,6 +3,7 @@ import { Clock, AlertTriangle, CheckCircle2, LogIn, LogOut, CalendarDays, TimerR
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
+import { teacherClockIn, teacherClockOut } from "@/lib/rpc";
 
 type ClockRecord = {
   id: string;
@@ -92,16 +93,12 @@ export default function ClockinClockout() {
   const handleSignIn = async () => {
     if (!teacherId || isClockedIn) return;
     setActing(true);
-    const now = new Date().toISOString();
-    const { error } = await supabase.from("teacher_clockin").insert({
-      teacher_id: teacherId,
-      clock_in:   now,
-      date:       todayISO,
-    });
+    const now = new Date();
+    const { error } = await teacherClockIn();
     if (error) {
-      toast.error(error.message);
+      toast.error(error);
     } else {
-      toast.success(`Signed in at ${new Date(now).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}`);
+      toast.success(`Signed in at ${now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}`);
       await fetchRecords(teacherId);
     }
     setActing(false);
@@ -110,16 +107,12 @@ export default function ClockinClockout() {
   const handleSignOut = async () => {
     if (!teacherId || !todayRecord || !isClockedIn) return;
     setActing(true);
-    const now = new Date().toISOString();
-    const { error } = await supabase
-      .from("teacher_clockin")
-      .update({ clock_out: now })
-      .eq("id", todayRecord.id)
-      .eq("teacher_id", teacherId);
+    const now = new Date();
+    const { error } = await teacherClockOut();
     if (error) {
-      toast.error(error.message);
+      toast.error(error);
     } else {
-      toast.success(`Signed out at ${new Date(now).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}`);
+      toast.success(`Signed out at ${now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}`);
       await fetchRecords(teacherId);
     }
     setActing(false);

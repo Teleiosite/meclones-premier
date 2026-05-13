@@ -21,16 +21,22 @@ let client: any;
 if (!isMissingEnv) {
   client = createClient(supabaseUrl!, supabaseAnonKey!);
 } else {
-  // Proxy fallback to prevent crashes
+  const message =
+    '[Meclones] Supabase Configuration Error:\n' +
+    `URL Fixed: ${supabaseUrl}\n` +
+    `Key Valid: ${hasKey}`;
+
+  if (import.meta.env.PROD) {
+    throw new Error(message);
+  }
+
+  // Development/test fallback keeps local tooling from crashing, while production
+  // fails fast so a misconfigured Vercel deployment cannot masquerade as online.
   client = new Proxy({}, {
     get: () => () => ({ data: null, error: { message: 'Supabase not initialized' } })
   });
-  
-  console.error(
-    '[Meclones] Supabase Configuration Error:\n' +
-    `URL Fixed: ${supabaseUrl}\n` +
-    `Key Valid: ${hasKey}`
-  );
+
+  console.error(message);
 }
 
 export const supabase = client;

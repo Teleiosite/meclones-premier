@@ -10,6 +10,11 @@ const ROLE_PATHS: Record<string, string> = {
   parent:  "/dashboard/parent",
 };
 
+function normalizeRole(role?: string | null) {
+  const normalized = role?.trim().toLowerCase();
+  return normalized && ROLE_PATHS[normalized] ? normalized : null;
+}
+
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -36,33 +41,21 @@ export default function Login() {
       return;
     }
 
-    // Step 1: Check user_metadata for a role (fast path)
-    let role: string | null = data.user.user_metadata?.role ?? null;
+    // RBAC source of truth: profiles.role. Do not trust mutable user_metadata
+    // and do not bootstrap privileged roles from the frontend.
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", data.user.id)
+      .single();
 
-    // Step 2: If no role in metadata, check profiles table
-    if (!role) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", data.user.id)
-        .single();
-      role = profile?.role ?? null;
+    if (profileError) {
+      setError("Unable to load your access profile. Please contact the administrator.");
+      setLoading(false);
+      return;
     }
 
-    // Step 3: Auto-assign admin role for the known admin email
-    // This bypasses the profiles table entirely for initial setup
-    if (!role && email.toLowerCase() === "admin@meclones.edu.ng") {
-      role = "admin";
-      // Persist it in metadata so future logins are instant
-      await supabase.auth.updateUser({ data: { role: "admin" } });
-      // Also try to create the profile row (may fail if RLS blocks it, that's OK)
-      await supabase.from("profiles").upsert({
-        id: data.user.id,
-        email: data.user.email,
-        full_name: "Meclones Administrator",
-        role: "admin",
-      });
-    }
+    const role = normalizeRole(profile?.role);
 
     if (!role) {
       setError("No role assigned to this account. Please contact the administrator.");
@@ -70,7 +63,8 @@ export default function Login() {
       return;
     }
 
-    const destination = from || ROLE_PATHS[role] || "/";
+    const safeFrom = from && from.startsWith(ROLE_PATHS[role]) ? from : null;
+    const destination = safeFrom || ROLE_PATHS[role];
     navigate(destination, { replace: true });
   };
 

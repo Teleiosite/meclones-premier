@@ -19,23 +19,15 @@ export type FeeStats = {
   fee_count: number;
 };
 
-export type AttendanceAuditEntry = {
+export type AttendanceBatchRecord = {
   student_id: string;
-  teacher_id: string;
-  date: string;           // ISO date string e.g. "2026-05-13"
-  old_status: string | null;
-  new_status: string;
-  note?: string;
+  status: "Present" | "Absent" | "Late";
 };
 
-export type PaymentAuditEntry = {
-  payment_id?: string;
-  student_id?: string;
-  old_status?: string;
-  new_status: string;
-  changed_by: string;     // auth.uid()
-  action: "reminder" | "status_change" | "webhook";
-  note?: string;
+export type AttendanceBatchResult = {
+  saved_count: number;
+  present_count: number;
+  absent_count: number;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -73,39 +65,79 @@ export async function getFeeStats(): Promise<{ data: FeeStats | null; error: str
   };
 }
 
+
 // ─────────────────────────────────────────────────────────────────────────────
-// Attendance Audit Log
+// Server-authoritative Attendance Save
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Writes a batch of attendance audit entries after a successful upsert.
- * Fire-and-forget is acceptable — a failure here should NOT block the save.
- */
-export async function logAttendanceChanges(entries: AttendanceAuditEntry[]): Promise<void> {
-  if (entries.length === 0) return;
-
-  const { error } = await supabase.from("attendance_audit_log").insert(entries);
+export async function submitAttendanceBatch(params: {
+  className: string;
+  date: string;
+  records: AttendanceBatchRecord[];
+}): Promise<{ data: AttendanceBatchResult | null; error: string | null }> {
+  const { data, error } = await supabase.rpc("submit_attendance_batch", {
+    p_class_name: params.className,
+    p_date: params.date,
+    p_records: params.records,
+  });
 
   if (error) {
-    // Non-fatal — log to console only. The attendance data itself is already saved.
-    console.warn("[audit] Failed to write attendance audit log:", error.message);
+    console.error("[rpc] submit_attendance_batch failed:", error.message);
+    return { data: null, error: error.message };
   }
+
+  const row = Array.isArray(data) ? data[0] : data;
+  return {
+    data: row
+      ? {
+          saved_count: Number(row.saved_count ?? 0),
+          present_count: Number(row.present_count ?? 0),
+          absent_count: Number(row.absent_count ?? 0),
+        }
+      : null,
+    error: null,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Teacher Clock-in / Clock-out RPCs
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function teacherClockIn(): Promise<{ error: string | null }> {
+  const { error } = await supabase.rpc("teacher_clock_in");
+  if (error) {
+    console.error("[rpc] teacher_clock_in failed:", error.message);
+    return { error: error.message };
+  }
+  return { error: null };
+}
+
+export async function teacherClockOut(): Promise<{ error: string | null }> {
+  const { error } = await supabase.rpc("teacher_clock_out");
+  if (error) {
+    console.error("[rpc] teacher_clock_out failed:", error.message);
+    return { error: error.message };
+  }
+  return { error: null };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Payment Audit Log
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Writes a single payment audit entry.
- * Use for reminder actions, status changes, and webhook events.
- */
-export async function logPaymentChange(entry: PaymentAuditEntry): Promise<void> {
-  const { error } = await supabase.from("payment_audit_log").insert(entry);
+
+export async function logPaymentReminder(paymentId: string, note?: string): Promise<{ error: string | null }> {
+  const { error } = await supabase.rpc("log_payment_reminder", {
+    p_payment_id: paymentId,
+    p_note: note ?? null,
+  });
 
   if (error) {
-    console.warn("[audit] Failed to write payment audit log:", error.message);
+    console.warn("[audit] Failed to log payment reminder:", error.message);
+    return { error: error.message };
   }
+
+  return { error: null };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
