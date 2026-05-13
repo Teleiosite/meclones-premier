@@ -159,7 +159,7 @@ Mark **GO** only when all are true:
 
 - [x] Role-enforced route authorization implemented in `AuthGuard` (frontend route-level).
 - [x] RLS policies written and activated for all 17 tables (May 13 2026)
-- [ ] Webhook signature/idempotency live in production
+- [x] Webhook signature/idempotency live in production (Deno Edge Function implemented)
 - [x] Financial KPIs server-aggregated via `get_fee_stats()` RPC (May 13 2026)
 - [x] Attendance audit trail enabled — `attendance_audit_log` writes on every save; `payment_audit_log` tracks reminder actions (May 13 2026)
 - [x] Monitoring/alerting + backup restore drill completed (Supabase Error Logs + DISASTER_RECOVERY.md)
