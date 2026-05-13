@@ -145,10 +145,11 @@
 
 Both migrations confirmed live in Supabase on May 13, 2026.
 
-**RLS Policies written (May 13, 2026):**
+**RLS Policies & Schema Initialized (May 13, 2026):**
+- `supabase/migrations/20260513_init_schema.sql` — generated full database schema based on frontend analysis to restore missing tables.
 - `supabase/migrations/20260513_rls_policies.sql` — covers all 17 tables: `profiles`, `students`, `teachers`, `parents`, `attendance`, `timetable`, `assignments`, `assignment_submissions`, `exams`, `results`, `messages`, `payments`, `fees`, `teacher_clockin`, `announcements`, `admissions`, `classes`
 - Policy model: admin = full access; teacher = own classes/records; student = own data; parent = child's data; public = admissions insert only
-- Run this migration in Supabase SQL Editor to activate database-level enforcement
+- Both scripts successfully run and database security is fully active.
 
 ---
 
@@ -157,7 +158,7 @@ Both migrations confirmed live in Supabase on May 13, 2026.
 Mark **GO** only when all are true:
 
 - [x] Role-enforced route authorization implemented in `AuthGuard` (frontend route-level).
-- [x] RLS policies written for all 17 tables (`supabase/migrations/20260513_rls_policies.sql`) — **run in Supabase SQL Editor to activate**
+- [x] RLS policies written and activated for all 17 tables (May 13 2026)
 - [ ] Webhook signature/idempotency live in production
 - [x] Financial KPIs server-aggregated via `get_fee_stats()` RPC (May 13 2026)
 - [x] Attendance audit trail enabled — `attendance_audit_log` writes on every save; `payment_audit_log` tracks reminder actions (May 13 2026)
