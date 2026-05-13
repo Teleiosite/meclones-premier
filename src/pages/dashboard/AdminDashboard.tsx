@@ -142,17 +142,15 @@ export function AdminDashboard() {
         ]);
 
         // 4. Fetch Classes Summary
-        const { data: studentClasses } = await supabase.from("students").select("class");
+        const { data: studentClasses } = await supabase.from("students").select("id, class");
         const classCounts: Record<string, number> = {};
-        studentClasses?.forEach(s => {
-          if (s.class) classCounts[s.class] = (classCounts[s.class] || 0) + 1;
+        const studentClassById: Record<string, string> = {};
+        studentClasses?.forEach((s: any) => {
+          if (s.class) {
+            classCounts[s.class] = (classCounts[s.class] || 0) + 1;
+            studentClassById[s.id] = s.class;
+          }
         });
-
-        const classList = Object.entries(classCounts).map(([name, count]) => ({
-          name,
-          students: count,
-          perf: 85 + Math.floor(Math.random() * 10) // Placeholder for performance until we have grade aggregates
-        })).slice(0, 3);
         
         // 5. Fetch Historical Data for Charts
         // Fetch last 30 days of attendance
@@ -160,7 +158,7 @@ export function AdminDashboard() {
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
         const { data: histAttendance } = await supabase
           .from("attendance")
-          .select("status, date")
+.select("student_id, status, date")
           .gte("date", thirtyDaysAgo.toISOString().split('T')[0]);
 
         if (histAttendance && histAttendance.length > 0) {
@@ -182,6 +180,32 @@ export function AdminDashboard() {
             weekCounts[i] > 0 ? Math.round((r / weekCounts[i]) * 100) : 40 + (i * 10)
           );
           setAttendanceData(finalRates);
+
+          const classAttendance: Record<string, { present: number; total: number }> = {};
+          histAttendance.forEach((a: any) => {
+            const className = studentClassById[a.student_id];
+            if (!className) return;
+            classAttendance[className] ??= { present: 0, total: 0 };
+            classAttendance[className].total += 1;
+            if (a.status === "Present") classAttendance[className].present += 1;
+          });
+
+          const classList = Object.entries(classCounts).map(([name, count]) => {
+            const attendance = classAttendance[name];
+            return {
+              name,
+              students: count,
+              perf: attendance?.total ? Math.round((attendance.present / attendance.total) * 100) : 0,
+            };
+          }).sort((a, b) => b.students - a.students).slice(0, 3);
+          setClasses(classList);
+        } else {
+          const classList = Object.entries(classCounts).map(([name, count]) => ({
+            name,
+            students: count,
+            perf: 0,
+          })).sort((a, b) => b.students - a.students).slice(0, 3);
+          setClasses(classList);
         }
 
         // Fetch last 6 months of payments
@@ -206,7 +230,7 @@ export function AdminDashboard() {
           const normalizedFees = Object.values(monthlyTotals).map(v => Math.round((v / maxVal) * 120) + 20);
           
           // Ensure we have 12 bars (pad with zeros or defaults if needed)
-          const paddedFees = [...Array(12)].map((_, i) => normalizedFees[i] || 10 + (i * 5));
+          const paddedFees = [...Array(12)].map((_, i) => normalizedFees[i] || 0);
           setFeesData(paddedFees);
         }
 
@@ -359,7 +383,7 @@ export function AdminDashboard() {
                         <div className="font-semibold text-navy">{c.name}</div>
                         <div className="text-[11px] text-muted-foreground">{c.students} Students</div>
                       </div>
-                      <div className="text-emerald-600 font-bold">{c.perf}%</div>
+                      <div className="text-emerald-600 font-bold">{c.perf ? `${c.perf}%` : "—"}</div>
                     </div>
                     <div className="h-1.5 bg-secondary"><div className="h-full bg-emerald-500" style={{ width: `${c.perf}%` }} /></div>
                   </div>

@@ -33,14 +33,22 @@ if (!isMissingEnv) {
     isMissingEnv = true; // Trigger the red diagnostic indicator on screen
   }
 } else {
-  // Proxy fallback to prevent crashes
-  client = createProxy('Supabase not initialized');
-  
-  console.error(
+  const message =
     '[Meclones] Supabase Configuration Error:\n' +
     `URL Fixed: ${supabaseUrl}\n` +
-    `Key Valid: ${hasKey}`
-  );
+    `Key Valid: ${hasKey}`;
+
+  if (import.meta.env.PROD) {
+    throw new Error(message);
+  }
+
+  // Development/test fallback keeps local tooling from crashing, while production
+  // fails fast so a misconfigured Vercel deployment cannot masquerade as online.
+  client = new Proxy({}, {
+    get: () => () => ({ data: null, error: { message: 'Supabase not initialized' } })
+  });
+
+  console.error(message);
 }
 
 export const supabase = client;

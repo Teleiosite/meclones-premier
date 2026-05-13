@@ -4,7 +4,7 @@ import StatCard from "@/components/dashboard/StatCard";
 import { toast } from "sonner";
 import { downloadCSV } from "@/lib/csv";
 import { supabase } from "@/lib/supabase";
-import { getFeeStats, logPaymentChange, type FeeStats } from "@/lib/rpc";
+import { getFeeStats, logPaymentReminder, type FeeStats } from "@/lib/rpc";
 import { useAuth } from "@/hooks/useAuth";
 
 type PaymentRecord = {
@@ -58,13 +58,13 @@ export default function AdminFees() {
     const { data: payData, error: payError } = await supabase
       .from("payments")
       .select(`
-        id, amount, reference, status, paid_at,
+        id, amount, reference, status, paid_at, term,
         students!payments_student_id_fkey (
           class,
           profiles!students_profile_id_fkey ( full_name ),
           parents!students_parent_id_fkey ( profiles!parents_profile_id_fkey ( full_name ) )
         ),
-        fees ( term )
+        fees!payments_fee_id_fkey ( term )
       `)
       .order("paid_at", { ascending: false })
       .limit(20);
@@ -77,7 +77,7 @@ export default function AdminFees() {
         student_name:  p.students?.profiles?.full_name ?? "—",
         parent_name:   p.students?.parents?.profiles?.full_name ?? "—",
         student_class: p.students?.class ?? "—",
-        term:          p.fees?.term ?? "—",
+        term:          p.fees?.term ?? p.term ?? "—",
         amount:        p.amount,
         date:          p.paid_at
           ? new Date(p.paid_at).toLocaleDateString("en-NG", { day: "numeric", month: "short" })
@@ -93,21 +93,34 @@ export default function AdminFees() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  useEffect(() => {
+    const channel = supabase
+      .channel("admin-fees-payments")
+      .on("postgres_changes", { event: "*", schema: "public", table: "payments" }, () => {
+        fetchData();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchData]);
+
   // ── Remind action — now audited ──────────────────────────────────────
   const handleRemind = async (p: PaymentRecord) => {
     if (!user || reminding) return;
     setReminding(p.id);
 
-    await logPaymentChange({
-      payment_id: p.id,
-      old_status: p.status,
-      new_status: p.status,          // status unchanged; this is a reminder action
-      changed_by: user.id,
-      action:     "reminder",
-      note:       `Reminder triggered by admin for ${p.parent_name} (${p.student_name}) — ${p.term}`,
-    });
+    const { error } = await logPaymentReminder(
+      p.id,
+      `Reminder triggered by admin for ${p.parent_name} (${p.student_name}) — ${p.term}`
+    );
 
-    toast.success(`Reminder sent to ${p.parent_name}.`);
+    if (error) {
+      toast.error(error);
+    } else {
+      toast.success(`Reminder logged for ${p.parent_name}. Connect SMS/email delivery before sending live notices.`);
+    }
     setReminding(null);
   };
 

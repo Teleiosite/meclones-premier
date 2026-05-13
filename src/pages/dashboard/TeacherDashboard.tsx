@@ -65,7 +65,7 @@ export function TeacherDashboard() {
         // 3. Fetch Student counts for these classes
         const { data: studentData } = await supabase
           .from("students")
-          .select("class")
+          .select("id, class")
           .in("class", uniqueClasses);
 
         const classCounts: Record<string, number> = {};
@@ -73,15 +73,39 @@ export function TeacherDashboard() {
           if (s.class) classCounts[s.class] = (classCounts[s.class] || 0) + 1;
         });
 
+        const studentIds = (studentData || []).map((s: any) => s.id).filter(Boolean);
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const { data: attendanceRows } = studentIds.length > 0
+          ? await supabase
+              .from("attendance")
+              .select("student_id, status")
+              .in("student_id", studentIds)
+              .gte("date", thirtyDaysAgo.toISOString().split("T")[0])
+          : { data: [] as any[] };
+
+        const studentClassById = Object.fromEntries((studentData || []).map((s: any) => [s.id, s.class]));
+        const attendanceByClass: Record<string, { present: number; total: number }> = {};
+        attendanceRows?.forEach((a: any) => {
+          const className = studentClassById[a.student_id];
+          if (!className) return;
+          attendanceByClass[className] ??= { present: 0, total: 0 };
+          attendanceByClass[className].total += 1;
+          if (a.status === "Present") attendanceByClass[className].present += 1;
+        });
+
         const colors = ["bg-navy", "bg-emerald-600", "bg-violet-600", "bg-orange-500", "bg-teal-600"];
-        const processedClasses = uniqueClasses.map((name, i) => ({
-          name,
-          subject: ttData?.find(t => t.class_name === name)?.subject || teacher.subject_specialization,
-          students: classCounts[name] || 0,
-          attendance: 90 + Math.floor(Math.random() * 8), // Placeholder
-          score: 75 + Math.floor(Math.random() * 15), // Placeholder
-          color: colors[i % colors.length]
-        }));
+        const processedClasses = uniqueClasses.map((name, i) => {
+          const attendance = attendanceByClass[name];
+          return {
+            name,
+            subject: ttData?.find(t => t.class_name === name)?.subject || teacher.subject_specialization,
+            students: classCounts[name] || 0,
+            attendance: attendance?.total ? Math.round((attendance.present / attendance.total) * 100) : 0,
+            score: 0,
+            color: colors[i % colors.length]
+          };
+        });
         setClassList(processedClasses);
 
         // 4. Fetch Today's Schedule
@@ -118,12 +142,17 @@ export function TeacherDashboard() {
         
         setAssignments(assignData || []);
 
+        const totalAttendance = Object.values(attendanceByClass).reduce((acc, item) => ({
+          present: acc.present + item.present,
+          total: acc.total + item.total,
+        }), { present: 0, total: 0 });
+
         // Stats
         setTeacherStats({
           classes: uniqueClasses.length.toString(),
           students: (studentData?.length || 0).toString(),
-          attendance: "94%",
-          pending: "5"
+          attendance: totalAttendance.total ? `${Math.round((totalAttendance.present / totalAttendance.total) * 100)}%` : "–",
+          pending: "–"
         });
 
       } catch (err) {
@@ -190,7 +219,7 @@ export function TeacherDashboard() {
                   <div className="space-y-2 text-xs">
                     <div className="flex justify-between"><span className="text-muted-foreground">Attendance</span><span className="font-bold text-emerald-600">{c.attendance}%</span></div>
                     <div className="h-1 bg-secondary"><div className="h-full bg-emerald-500" style={{ width: `${c.attendance}%` }} /></div>
-                    <div className="flex justify-between mt-2"><span className="text-muted-foreground">Avg. Score</span><span className="font-bold text-navy">{c.score}%</span></div>
+                    <div className="flex justify-between mt-2"><span className="text-muted-foreground">Avg. Score</span><span className="font-bold text-navy">{c.score ? `${c.score}%` : "—"}</span></div>
                   </div>
                   <button onClick={() => navigate("/dashboard/teacher/classes")} className={`w-full mt-3 ${c.color} text-white py-2 text-xs font-bold tracking-wider hover:opacity-90`}>VIEW CLASS</button>
                 </div>
@@ -275,7 +304,7 @@ export function TeacherDashboard() {
           <div className="bg-white border border-border p-5">
             <h3 className="font-bold text-navy mb-4">Pending Tasks</h3>
             <div className="space-y-2 text-sm">
-              {[["Assignments to grade", 5], ["Attendance not marked", 3], ["Quiz to review", 2], ["Reports to submit", 1]].map((t, i) => (
+              {[["Assignments to grade", teacherStats.pending], ["Attendance rate", teacherStats.attendance], ["Classes assigned", teacherStats.classes], ["Students assigned", teacherStats.students]].map((t, i) => (
                 <div key={i} className="flex justify-between border-b border-border py-2 last:border-0">
                   <span className="text-navy">{t[0]}</span>
                   <span className="font-bold text-accent">{t[1]}</span>
