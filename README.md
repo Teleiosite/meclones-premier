@@ -87,7 +87,7 @@ As of this audit, the app is **not yet production-ready for financial and attend
 
 ### P0 (Immediate)
 
-- Implement role-based route guard and deny cross-role dashboard access.
+- ✅ Implemented role-based route guard and cross-role redirect in `AuthGuard` (May 13, 2026).
 - Remove/replace UI-only teacher dashboard clock-in state with server-backed state only.
 - Enforce strict RLS ownership checks on attendance and teacher clock-in rows.
 - Resolve structural issue in `TeacherDashboard.tsx` (hook placement consistency).
@@ -129,7 +129,7 @@ As of this audit, the app is **not yet production-ready for financial and attend
 
 Mark **GO** only when all are true:
 
-- [ ] Role-enforced route authorization implemented and tested
+- [x] Role-enforced route authorization implemented in `AuthGuard` (frontend route-level).
 - [ ] RLS policies validated for all touched tables
 - [ ] Webhook signature/idempotency live in production
 - [ ] Financial KPIs server-aggregated and reconciled
