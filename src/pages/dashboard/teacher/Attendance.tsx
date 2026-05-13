@@ -36,10 +36,10 @@ export default function TeacherAttendance() {
         // Fetch classes this teacher is assigned to in timetable
         const { data: tt } = await supabase
           .from("timetable")
-          .select("class")
+          .select("class_name")
           .eq("teacher_id", teacher.id);
 
-        const uniqueClasses = [...new Set((tt || []).map((t: any) => t.class))];
+        const uniqueClasses = [...new Set((tt || []).map((t: any) => t.class_name).filter(Boolean))];
         setClasses(uniqueClasses);
         if (uniqueClasses.length > 0) setSelectedClass(uniqueClasses[0]);
       }
@@ -70,6 +70,7 @@ export default function TeacherAttendance() {
         .from("attendance")
         .select("student_id, status")
         .eq("date", date)
+        .eq("marked_by", teacherId)
         .in("student_id", studentIds);
 
       if (existing && existing.length > 0) {
@@ -82,7 +83,7 @@ export default function TeacherAttendance() {
 
     setStudents(mapped);
     setLoadingStudents(false);
-  }, [selectedClass, date]);
+  }, [selectedClass, date, teacherId]);
 
   useEffect(() => { loadStudents(); }, [loadStudents]);
 
