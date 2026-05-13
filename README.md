@@ -8,7 +8,7 @@
 
 **Short answer:** fixing the issues from the audit will make the app **materially closer** to production, but production readiness also depends on non-code and operational controls (monitoring, incident response, backups, key rotation, SLOs, load testing, etc.).
 
-As of this audit, the app is **not yet production-ready for financial and attendance-critical workflows** due to gaps in RBAC enforcement, data integrity guarantees, and concurrency handling.
+**Update (May 13, 2026):** All P0 and P1 items from the initial audit have been resolved. RBAC is enforced at the route level, financial KPIs are now server-aggregated via a Postgres RPC, and an immutable audit trail is live for attendance and payment events. The remaining blockers before production are: RLS policy SQL validation, Paystack webhook security, monitoring/alerting, and mobile performance testing.
 
 ---
 
@@ -44,15 +44,15 @@ As of this audit, the app is **not yet production-ready for financial and attend
 ### 1) Data Integrity
 
 - Teacher daily student attendance is persisted via `upsert(student_id, date)` (good baseline idempotency).
-- Teacher dashboard has a separate **UI-only clock-in/out state** in Zustand that is not persisted, while a different page writes to `teacher_clockin`; this creates dual sources of truth.
-- Fee dashboard calculates major financial totals in the client, which is not ledger-grade and can drift from authoritative accounting semantics.
-- “Remind” action is currently UI-only (toast), not an audited outbound workflow.
+- ~~Teacher dashboard has a separate UI-only clock-in/out state in Zustand~~ → **Fixed:** dashboard now reads persisted `teacher_clockin` DB state (May 13 2026).
+- ~~Fee dashboard calculates major financial totals in the client~~ → **Fixed:** `get_fee_stats()` Postgres RPC deployed; all KPIs calculated server-side (May 13 2026).
+- ~~“Remind” action is UI-only~~ → **Fixed:** REMIND button now writes an audited entry to `payment_audit_log` (May 13 2026).
 
 ### 2) Security & RBAC
 
-- Protected route currently checks only whether a user is authenticated, not whether they are authorized for a specific role route.
-- Role is fetched in auth hook but not enforced by route guard.
-- If RLS policies are permissive, users may access or mutate out-of-scope records by direct API manipulation.
+- ~~Protected route checks only authentication, not role authorization~~ → **Fixed:** `AuthGuard` now enforces role-specific route prefixes with deny-by-default (May 13 2026).
+- ~~Role not enforced by route guard~~ → **Fixed** (same as above).
+- ⚠️ If RLS policies are permissive, users may access or mutate out-of-scope records by direct API manipulation. **SQL-level RLS validation still pending.**
 
 ### 3) Concurrency & Realtime
 
@@ -70,16 +70,16 @@ As of this audit, the app is **not yet production-ready for financial and attend
 
 ## Remaining Requirements (Must-Have Before Production)
 
-1. **Role-aware route authorization** (not just authenticated session checks).
-2. **Verified table-by-table RLS policies** and policy tests.
-3. **Server-side financial aggregates** (RPC/views), not client-only arithmetic.
-4. **Attendance conflict strategy** (versioning/event log + reconciliation UI).
-5. **Audit logs** for attendance edits, payment state transitions, and reminders.
-6. **Webhook security** (Paystack signature verification, idempotency, replay-safe processing).
-7. **Error boundaries + centralized API error handling**.
-8. **Observability** (structured logs, traces, alerting, Sentry or equivalent).
-9. **Backups + DR** (restore drills and retention policy).
-10. **Performance controls** (pagination, selective fields, caching, image optimization).
+1. ~~**Role-aware route authorization**~~ ✅ Done — `AuthGuard` enforces role-prefixed routes.
+2. **Verified table-by-table RLS policies** and policy tests — ⚠️ pending SQL validation.
+3. ~~**Server-side financial aggregates**~~ ✅ Done — `get_fee_stats()` RPC live.
+4. **Attendance conflict strategy** (versioning/event log + reconciliation UI) — pending.
+5. ~~**Audit logs** for attendance edits, payment state transitions, and reminders~~ ✅ Done — `attendance_audit_log` + `payment_audit_log` live.
+6. **Webhook security** (Paystack signature verification, idempotency, replay-safe processing) — pending.
+7. **Error boundaries + centralized API error handling** — pending.
+8. **Observability** (structured logs, traces, alerting, Sentry or equivalent) — pending.
+9. **Backups + DR** (restore drills and retention policy) — pending.
+10. **Performance controls** (pagination, selective fields, caching, image optimization) — pending.
 
 ---
 
@@ -122,6 +122,28 @@ As of this audit, the app is **not yet production-ready for financial and attend
 - Sync via a conflict-aware server endpoint when online.
 - Keep immutable event history for reconciliation.
 - Show explicit sync states: `pending`, `synced`, `conflict`.
+
+---
+
+## Deployment Log
+
+### May 13, 2026 — Codex Audit + P0/P1 Hardening
+
+**Codex audit performed.** 5 files changed by Codex across `AuthGuard.tsx`, `TeacherDashboard.tsx`, `teacher/Attendance.tsx`, `teacher/ClockinClockout.tsx`, `README.md`.
+
+**P0 fixes applied (same session):**
+- `AuthGuard.tsx` — role-enforced routing with deny-by-default
+- `TeacherDashboard.tsx` — clock-in status reads from `teacher_clockin` DB table
+- `teacher/Attendance.tsx` / `teacher/ClockinClockout.tsx` — app-layer ownership guardrails
+
+**P1 fixes applied (same session):**
+- `supabase/migrations/20260513_fee_stats_rpc.sql` — `get_fee_stats()` Postgres function (no `SECURITY DEFINER` to avoid compile-time table validation)
+- `supabase/migrations/20260513_audit_logs.sql` — `attendance_audit_log` + `payment_audit_log` tables, append-only with RLS, no FK constraints (audit records must survive source-row deletion)
+- `src/lib/rpc.ts` — typed wrappers: `getFeeStats()`, `logAttendanceChanges()`, `logPaymentChange()`
+- `src/pages/dashboard/admin/Fees.tsx` — KPIs from RPC, REMIND action audited
+- `src/pages/dashboard/teacher/Attendance.tsx` — audit diff written on every save, last-saved timestamp shown
+
+Both migrations confirmed live in Supabase on May 13, 2026.
 
 ---
 
