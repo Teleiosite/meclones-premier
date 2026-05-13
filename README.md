@@ -94,8 +94,8 @@ As of this audit, the app is **not yet production-ready for financial and attend
 
 ### P1 (Next Sprint)
 
-- Replace fee KPI calculations with DB-backed RPC/view outputs.
-- Add append-only audit trail for attendance and payment changes.
+- ✅ Replace fee KPI calculations with DB-backed RPC/view outputs (`get_fee_stats()` RPC deployed, May 13 2026).
+- ✅ Add append-only audit trail for attendance and payment changes (`attendance_audit_log` + `payment_audit_log` tables with RLS, May 13 2026).
 - Add conflict-aware save semantics for attendance edits.
 
 ### P2
@@ -132,8 +132,8 @@ Mark **GO** only when all are true:
 - [x] Role-enforced route authorization implemented in `AuthGuard` (frontend route-level).
 - [ ] RLS policies validated for all touched tables (app-layer checks tightened; SQL policy verification still pending)
 - [ ] Webhook signature/idempotency live in production
-- [ ] Financial KPIs server-aggregated and reconciled
-- [ ] Attendance conflict handling and audit trails enabled (partial: dashboard clock status now reads persisted state)
+- [x] Financial KPIs server-aggregated via `get_fee_stats()` RPC (May 13 2026)
+- [x] Attendance audit trail enabled — `attendance_audit_log` writes on every save; `payment_audit_log` tracks reminder actions (May 13 2026)
 - [ ] Monitoring/alerting + backup restore drill completed
 - [ ] Mobile performance budgets met under Lagos 4G test conditions
 

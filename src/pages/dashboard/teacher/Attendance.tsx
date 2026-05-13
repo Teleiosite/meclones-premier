@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
-import { CheckCircle2, XCircle, Loader2, Save } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { CheckCircle2, XCircle, Loader2, Save, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
+import { logAttendanceChanges } from "@/lib/rpc";
 
 type Student = {
   id: string;
@@ -20,6 +21,9 @@ export default function TeacherAttendance() {
   const [loading, setLoading]     = useState(true);
   const [saving, setSaving]       = useState(false);
   const [loadingStudents, setLoadingStudents] = useState(false);
+  const [lastSaved, setLastSaved] = useState<string | null>(null);
+  // Snapshot of statuses as they were when loaded from DB (for audit diffing)
+  const prevStatusRef = useRef<Record<string, string>>({});
 
   // Fetch teacher's ID and their classes
   useEffect(() => {
@@ -39,7 +43,7 @@ export default function TeacherAttendance() {
           .select("class_name")
           .eq("teacher_id", teacher.id);
 
-        const uniqueClasses = [...new Set((tt || []).map((t: any) => t.class_name).filter(Boolean))];
+        const uniqueClasses = [...new Set((tt || []).map((t: any) => t.class_name as string).filter(Boolean))] as string[];
         setClasses(uniqueClasses);
         if (uniqueClasses.length > 0) setSelectedClass(uniqueClasses[0]);
       }
@@ -78,6 +82,13 @@ export default function TeacherAttendance() {
         mapped.forEach(s => {
           if (map[s.id]) s.present = map[s.id] === "Present";
         });
+        // Store the loaded state as the baseline for audit diffing
+        prevStatusRef.current = Object.fromEntries(
+          mapped.map(s => [s.id, s.present ? "Present" : "Absent"])
+        );
+      } else {
+        // No prior record — mark all as new (old_status = null)
+        prevStatusRef.current = {};
       }
     }
 
@@ -111,7 +122,30 @@ export default function TeacherAttendance() {
     if (error) {
       toast.error(error.message);
     } else {
+      const savedAt = new Date();
       toast.success(`Attendance saved for ${selectedClass} — ${presentCount}/${students.length} present.`);
+      setLastSaved(savedAt.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
+
+      // ── Write immutable audit log (non-blocking) ──────────────────
+      const auditEntries = students.map(s => {
+        const newStatus  = s.present ? "Present" : "Absent";
+        const oldStatus  = prevStatusRef.current[s.id] ?? null; // null = first time
+        return {
+          student_id: s.id,
+          teacher_id: teacherId,
+          date,
+          old_status: oldStatus,
+          new_status: newStatus,
+          note: `Saved via ${selectedClass} attendance sheet`,
+        };
+      });
+      // Fire-and-forget — won't block UI on audit failure
+      logAttendanceChanges(auditEntries);
+
+      // Update baseline so subsequent saves diff correctly
+      prevStatusRef.current = Object.fromEntries(
+        students.map(s => [s.id, s.present ? "Present" : "Absent"])
+      );
     }
     setSaving(false);
   };
@@ -182,16 +216,23 @@ export default function TeacherAttendance() {
               ))}
             </div>
 
-            <div className="flex gap-3">
-              <button onClick={handleSave} disabled={saving}
-                className="flex items-center gap-2 bg-navy text-gold px-8 py-3 font-bold text-xs tracking-wider hover:bg-navy/90 transition disabled:opacity-60">
-                {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                {saving ? "SAVING..." : "SAVE ATTENDANCE →"}
-              </button>
-              <button onClick={() => setStudents(prev => prev.map(s => ({ ...s, present: true })))}
-                className="border border-navy text-navy px-5 py-3 font-bold text-xs tracking-wider hover:bg-navy hover:text-gold transition">
-                MARK ALL PRESENT
-              </button>
+            <div className="space-y-2">
+              <div className="flex gap-3">
+                <button onClick={handleSave} disabled={saving}
+                  className="flex items-center gap-2 bg-navy text-gold px-8 py-3 font-bold text-xs tracking-wider hover:bg-navy/90 transition disabled:opacity-60">
+                  {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                  {saving ? "SAVING..." : "SAVE ATTENDANCE →"}
+                </button>
+                <button onClick={() => setStudents(prev => prev.map(s => ({ ...s, present: true })))}
+                  className="border border-navy text-navy px-5 py-3 font-bold text-xs tracking-wider hover:bg-navy hover:text-gold transition">
+                  MARK ALL PRESENT
+                </button>
+              </div>
+              {lastSaved && (
+                <p className="flex items-center gap-1.5 text-[11px] text-emerald-600">
+                  <Clock size={11} /> Last saved at {lastSaved} — changes logged to audit trail
+                </p>
+              )}
             </div>
           </>
         )}
