@@ -1,3 +1,7 @@
+// @ts-nocheck
+// Note: This file runs in Deno (Supabase Edge Functions), not Node.js.
+// @ts-nocheck prevents standard IDE TypeScript servers from showing errors for Deno imports and globals.
+
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 import crypto from "node:crypto";
