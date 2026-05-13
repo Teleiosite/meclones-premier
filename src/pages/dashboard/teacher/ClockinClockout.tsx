@@ -111,7 +111,11 @@ export default function ClockinClockout() {
     if (!teacherId || !todayRecord || !isClockedIn) return;
     setActing(true);
     const now = new Date().toISOString();
-    const { error } = await supabase.from("teacher_clockin").update({ clock_out: now }).eq("id", todayRecord.id);
+    const { error } = await supabase
+      .from("teacher_clockin")
+      .update({ clock_out: now })
+      .eq("id", todayRecord.id)
+      .eq("teacher_id", teacherId);
     if (error) {
       toast.error(error.message);
     } else {
