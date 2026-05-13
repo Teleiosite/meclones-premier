@@ -107,3 +107,27 @@ export async function logPaymentChange(entry: PaymentAuditEntry): Promise<void> 
     console.warn("[audit] Failed to write payment audit log:", error.message);
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Frontend Error Logging
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type FrontendErrorEntry = {
+  user_id?: string | null;
+  route: string;
+  message: string;
+  stack_trace?: string;
+  user_agent?: string;
+};
+
+/**
+ * Silently logs a frontend crash or unhandled error to the database.
+ */
+export async function logFrontendError(entry: FrontendErrorEntry): Promise<void> {
+  // Fire and forget, don't crash the error handler if logging fails
+  supabase.from("frontend_errors").insert(entry).then(({ error }) => {
+    if (error) {
+      console.error("[error-logger] Failed to save frontend error:", error.message);
+    }
+  });
+}

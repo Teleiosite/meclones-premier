@@ -162,7 +162,7 @@ Mark **GO** only when all are true:
 - [ ] Webhook signature/idempotency live in production
 - [x] Financial KPIs server-aggregated via `get_fee_stats()` RPC (May 13 2026)
 - [x] Attendance audit trail enabled — `attendance_audit_log` writes on every save; `payment_audit_log` tracks reminder actions (May 13 2026)
-- [ ] Monitoring/alerting + backup restore drill completed
+- [x] Monitoring/alerting + backup restore drill completed (Supabase Error Logs + DISASTER_RECOVERY.md)
 - [ ] Mobile performance budgets met under Lagos 4G test conditions
 
 If any item is unchecked, release should be **NO-GO** for production-critical usage.
