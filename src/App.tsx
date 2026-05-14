@@ -16,6 +16,7 @@ import News from "./pages/News";
 import Contact from "./pages/Contact";
 import Login from "./pages/auth/Login";
 import ForgotPassword from "./pages/auth/ForgotPassword";
+import ResetPassword from "./pages/auth/ResetPassword";
 import AdminLayout, { AdminDashboard } from "./pages/dashboard/AdminDashboard";
 import TeacherLayout, { TeacherDashboard } from "./pages/dashboard/TeacherDashboard";
 import StudentLayout, { StudentDashboard } from "./pages/dashboard/StudentDashboard";
@@ -90,6 +91,7 @@ const App = () => (
             {/* Auth */}
             <Route path="/login" element={<Login />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
 
             {/* Protected dashboard routes */}
             <Route element={<AuthGuard />}>

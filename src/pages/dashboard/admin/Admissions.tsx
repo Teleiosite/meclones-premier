@@ -44,20 +44,41 @@ export default function AdminAdmissions() {
 
   const updateStatus = async (id: string, status: "Approved" | "Rejected") => {
     setUpdating(id);
-    const { error } = await supabase
-      .from("admissions")
-      .update({ status })
-      .eq("id", id);
+    
+    try {
+      if (status === "Approved") {
+        // Call the secure RPC for Parent + Student orchestration
+        const { data, error } = await supabase.rpc("manage_user", {
+          p_action: "approve_admission",
+          p_admission_id: id
+        });
 
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success(`Application ${status.toLowerCase()}.`);
+        if (error) throw error;
+        if (data?.status === "error") throw new Error(data.message);
+
+        toast.success("Admission approved. Accounts created for student and parent.");
+      } else {
+        // Just update the status for Rejections
+        const { error } = await supabase
+          .from("admissions")
+          .update({ status })
+          .eq("id", id);
+        
+        if (error) throw error;
+        toast.success("Application rejected.");
+      }
+
       setApplications(prev => prev.map(a => a.id === id ? { ...a, status } : a));
       if (viewing?.id === id) setViewing(v => v ? { ...v, status } : null);
+    } catch (err: any) {
+      console.error("Admission update error:", err);
+      toast.error(err.message || "Failed to update admission status.");
+    } finally {
+      setUpdating(null);
     }
-    setUpdating(null);
   };
+
+
 
   const counts = {
     All:      applications.length,

@@ -23,7 +23,7 @@ export default function AdminTeachers() {
   const [saving, setSaving]         = useState(false);
   const [viewing, setViewing]       = useState<Teacher | null>(null);
   const [form, setForm]             = useState({
-    full_name: "", subject_specialization: "", qualification: "", employee_id: "",
+    full_name: "", email: "", password: "", subject_specialization: "", qualification: "", employee_id: "",
   });
 
   const fetchTeachers = useCallback(async () => {
@@ -37,7 +37,7 @@ export default function AdminTeachers() {
         qualification,
         status,
         profile_id,
-        profiles!teachers_profile_id_fkey ( full_name )
+        profiles!teachers_profile_id_fkey ( full_name, email )
       `)
       .order("created_at", { ascending: false });
 
@@ -51,6 +51,7 @@ export default function AdminTeachers() {
       id:                     t.id,
       employee_id:            t.employee_id ?? "—",
       full_name:              t.profiles?.full_name ?? "—",
+      email:                  t.profiles?.email ?? "—",
       subject_specialization: t.subject_specialization ?? "—",
       qualification:          t.qualification ?? "—",
       status:                 t.status ?? "Active",
@@ -65,7 +66,8 @@ export default function AdminTeachers() {
 
   const filtered = teachers.filter((t) => {
     const matchSearch = t.full_name.toLowerCase().includes(search.toLowerCase())
-      || t.subject_specialization.toLowerCase().includes(search.toLowerCase());
+      || t.subject_specialization.toLowerCase().includes(search.toLowerCase())
+      || (t as any).email?.toLowerCase().includes(search.toLowerCase());
     const matchType = typeFilter === "All"
       || (typeFilter === "Primary" && ["Primary", "Nursery", "Reception"].some(k => t.subject_specialization.includes(k)))
       || (typeFilter === "Secondary" && !["Primary", "Nursery", "Reception"].some(k => t.subject_specialization.includes(k)));
@@ -74,33 +76,51 @@ export default function AdminTeachers() {
 
   const exportCsv = () => {
     downloadCSV("teachers.csv", [
-      ["ID", "Name", "Subject", "Qualification", "Status"],
-      ...filtered.map((t) => [t.employee_id, t.full_name, t.subject_specialization, t.qualification, t.status]),
+      ["ID", "Name", "Email", "Subject", "Qualification", "Status"],
+      ...filtered.map((t) => [t.employee_id, t.full_name, (t as any).email, t.subject_specialization, t.qualification, t.status]),
     ]);
     toast.success(`Exported ${filtered.length} teachers.`);
   };
 
   const addTeacher = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form.email || !form.password) {
+      toast.error("Email and password are required.");
+      return;
+    }
     setSaving(true);
 
-    const { error } = await supabase.from("teachers").insert({
-      employee_id:            form.employee_id || `T-${Date.now()}`,
-      subject_specialization: form.subject_specialization,
-      qualification:          form.qualification,
-      status:                 "Active",
-    });
+    try {
+      // Call the secure RPC instead of an Edge Function
+      const { data, error } = await supabase.rpc("manage_user", {
+        p_action: "create",
+        p_email: form.email,
+        p_password: form.password,
+        p_role: "teacher",
+        p_metadata: {
+          full_name: form.full_name,
+          employee_id: form.employee_id || `T-${Date.now()}`,
+          subject_specialization: form.subject_specialization,
+          qualification: form.qualification
+        }
+      });
 
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success(`${form.full_name} added.`);
-      setForm({ full_name: "", subject_specialization: "", qualification: "", employee_id: "" });
+      if (error) throw error;
+      if (data?.status === "error") throw new Error(data.message);
+
+      toast.success(`${form.full_name} added successfully with access.`);
+      setForm({ full_name: "", email: "", password: "", subject_specialization: "", qualification: "", employee_id: "" });
       setShowAdd(false);
       fetchTeachers();
+    } catch (err: any) {
+      console.error("Teacher creation error:", err);
+      toast.error(err.message || "Failed to create teacher account.");
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
+
+
 
   const counts = {
     Total: teachers.length,
@@ -212,9 +232,16 @@ export default function AdminTeachers() {
             <input required placeholder="Full name" value={form.full_name}
               onChange={(e) => setForm({ ...form, full_name: e.target.value })}
               className="w-full border border-border px-3 py-2 text-sm" />
+            <input required type="email" placeholder="Email address" value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              className="w-full border border-border px-3 py-2 text-sm" />
+            <input required type="password" placeholder="Initial password" value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              className="w-full border border-border px-3 py-2 text-sm" />
             <input required placeholder="Subject / specialization" value={form.subject_specialization}
               onChange={(e) => setForm({ ...form, subject_specialization: e.target.value })}
               className="w-full border border-border px-3 py-2 text-sm" />
+
             <input placeholder="Qualification (e.g. B.Ed, M.Sc)" value={form.qualification}
               onChange={(e) => setForm({ ...form, qualification: e.target.value })}
               className="w-full border border-border px-3 py-2 text-sm" />

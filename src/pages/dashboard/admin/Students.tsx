@@ -32,7 +32,7 @@ export default function AdminStudents() {
   const [saving, setSaving]         = useState(false);
   const [viewing, setViewing]       = useState<Student | null>(null);
   const [form, setForm]             = useState({
-    admission_no: "", full_name: "", class: "Primary 1",
+    admission_no: "", full_name: "", email: "", password: "", class: "Primary 1",
     gender: "Male", parent_name: "",
   });
 
@@ -46,7 +46,7 @@ export default function AdminStudents() {
         class,
         gender,
         status,
-        profiles!students_profile_id_fkey ( full_name ),
+        profiles!students_profile_id_fkey ( full_name, email ),
         parents ( profiles!parents_profile_id_fkey ( full_name ) )
       `)
       .order("created_at", { ascending: false });
@@ -61,6 +61,7 @@ export default function AdminStudents() {
       id:          s.id,
       admission_no: s.admission_no,
       full_name:   s.profiles?.full_name ?? "—",
+      email:       s.profiles?.email ?? "—",
       class:       s.class,
       gender:      s.gender ?? "—",
       parent_name: s.parents?.profiles?.full_name ?? "—",
@@ -79,44 +80,58 @@ export default function AdminStudents() {
 
   const filtered = students.filter((s) => {
     const matchSearch = s.full_name.toLowerCase().includes(search.toLowerCase())
-      || s.admission_no.includes(search);
+      || s.admission_no.includes(search)
+      || (s as any).email?.toLowerCase().includes(search.toLowerCase());
     const matchClass = classFilter === "All" || s.class === classFilter;
     return matchSearch && matchClass;
   });
 
   const exportCsv = () => {
     downloadCSV("students.csv", [
-      ["ID", "Name", "Class", "Gender", "Parent", "Status"],
-      ...filtered.map((s) => [s.admission_no, s.full_name, s.class, s.gender, s.parent_name, s.status]),
+      ["ID", "Name", "Email", "Class", "Gender", "Parent", "Status"],
+      ...filtered.map((s) => [s.admission_no, s.full_name, (s as any).email, s.class, s.gender, s.parent_name, s.status]),
     ]);
     toast.success(`Exported ${filtered.length} students.`);
   };
 
   const addStudent = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.full_name.trim() || !form.admission_no.trim()) return;
-    setSaving(true);
-
-    // 1. Create a profile-less student record (admin-created, no auth account yet)
-    const { error } = await supabase.from("students").insert({
-      admission_no: form.admission_no,
-      class:        form.class,
-      gender:       form.gender,
-      status:       "Active",
-    });
-
-    if (error) {
-      toast.error(error.message);
-      setSaving(false);
+    if (!form.full_name.trim() || !form.admission_no.trim() || !form.email || !form.password) {
+      toast.error("Required fields: Name, Admission No, Email, Password");
       return;
     }
+    setSaving(true);
 
-    toast.success(`${form.full_name} added successfully.`);
-    setForm({ admission_no: "", full_name: "", class: "Primary 1", gender: "Male", parent_name: "" });
-    setShowAdd(false);
-    setSaving(false);
-    fetchStudents();
+    try {
+      const { data, error } = await supabase.rpc("manage_user", {
+        p_action: "create",
+        p_email: form.email,
+        p_password: form.password,
+        p_role: "student",
+        p_metadata: {
+          full_name: form.full_name,
+          admission_no: form.admission_no,
+          class: form.class,
+          gender: form.gender
+        }
+      });
+
+      if (error) throw error;
+      if (data?.status === "error") throw new Error(data.message);
+
+      toast.success(`${form.full_name} added successfully with access.`);
+      setForm({ admission_no: "", full_name: "", email: "", password: "", class: "Primary 1", gender: "Male", parent_name: "" });
+      setShowAdd(false);
+      fetchStudents();
+    } catch (err: any) {
+      console.error("Student creation error:", err);
+      toast.error(err.message || "Failed to create student account.");
+    } finally {
+      setSaving(false);
+    }
   };
+
+
 
   return (
     <div className="space-y-6">
@@ -217,9 +232,16 @@ export default function AdminStudents() {
             <input required placeholder="Full name" value={form.full_name}
               onChange={(e) => setForm({ ...form, full_name: e.target.value })}
               className="w-full border border-border px-3 py-2 text-sm" />
+            <input required type="email" placeholder="Email address" value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              className="w-full border border-border px-3 py-2 text-sm" />
+            <input required type="password" placeholder="Initial password" value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              className="w-full border border-border px-3 py-2 text-sm" />
             <input required placeholder="Admission No (e.g. MC-011)" value={form.admission_no}
               onChange={(e) => setForm({ ...form, admission_no: e.target.value })}
               className="w-full border border-border px-3 py-2 text-sm font-mono" />
+
             <select value={form.class} onChange={(e) => setForm({ ...form, class: e.target.value })}
               className="w-full border border-border px-3 py-2 text-sm bg-white">
               {CLASS_OPTIONS.map((c) => <option key={c}>{c}</option>)}
