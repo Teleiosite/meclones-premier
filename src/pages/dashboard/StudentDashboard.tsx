@@ -27,6 +27,10 @@ export default function StudentLayout() {
   return <DashboardLayout role="Student" userName="David Okafor" userMeta="SS 2 Student" nav={nav} />;
 }
 
+export function StudentDashboard() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  
   const [studentStats, setStudentStats] = useState({ subjects: "–", attendance: "–", pending: "–", average: "–", upcoming: "–" });
   const [courseList, setCourseList] = useState<any[]>([]);
   const [assignmentList, setAssignmentList] = useState<any[]>([]);
@@ -36,9 +40,6 @@ export default function StudentLayout() {
   const [studentName, setStudentName] = useState("Student");
   const [studentClass, setStudentClass] = useState("");
 
-export function StudentDashboard() {
-  const navigate = useNavigate();
-  const { user } = useAuth();
   
   useEffect(() => {
     async function loadStudentData() {

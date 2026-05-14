@@ -1,7 +1,15 @@
+import { Link, useNavigate } from "react-router-dom";
+import DashboardLayout from "@/components/dashboard/DashboardLayout";
+import StatCard from "@/components/dashboard/StatCard";
+import {
+  LayoutDashboard, Users, ClipboardCheck, Award, CreditCard,
+  MessageSquare, Calendar, FileText, Settings, TrendingUp, Wallet,
+  Loader2,
+} from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+
 
 const nav = [
   { to: "/dashboard/parent", label: "Dashboard", icon: <LayoutDashboard size={18} /> },
@@ -19,6 +27,10 @@ export default function ParentLayout() {
   return <DashboardLayout role="Parent" userName="Mrs. Adeyemi" userMeta="Parent / Guardian" nav={nav} />;
 }
 
+export function ParentDashboard() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  
   const [parentStats, setParentStats] = useState({ children: "–", attendance: "–", performance: "–", outstanding: "₦0" });
   const [childList, setChildList] = useState<any[]>([]);
   const [resultList, setResultList] = useState<any[]>([]);
@@ -26,8 +38,6 @@ export default function ParentLayout() {
   const [loading, setLoading] = useState(true);
   const [parentName, setParentName] = useState("Parent");
 
-export function ParentDashboard() {
-  const { user } = useAuth();
   
   useEffect(() => {
     async function loadParentData() {
