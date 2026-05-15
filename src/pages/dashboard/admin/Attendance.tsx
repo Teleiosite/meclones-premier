@@ -3,6 +3,7 @@ import {
   AlertTriangle,
   CalendarDays,
   Clock3,
+  Globe,
   Loader2,
   MapPin,
   RefreshCcw,
@@ -56,8 +57,10 @@ export default function AdminAttendance() {
   const [tab, setTab] = useState<TabKey>("surveillance");
 
   const [loading, setLoading] = useState(true);
-  const [savingRow, setSavingRow] = useState<string | null>(null); // teacher_id being toggled
+  const [savingRow, setSavingRow] = useState<string | null>(null);
   const [savingPolicy, setSavingPolicy] = useState(false);
+  const [capturingIp, setCapturingIp] = useState(false);
+  const [syncingGps, setSyncingGps] = useState(false);
 
   const [rows, setRows] = useState<TeacherRow[]>([]);
   const [policies, setPolicies] = useState<AttendancePolicy[]>([]);
@@ -135,6 +138,55 @@ export default function AdminAttendance() {
       setSavingPolicy(false);
     }
   };
+
+  const captureMyIp = async () => {
+    try {
+      setCapturingIp(true);
+      const res = await fetch("https://api.ipify.org?format=json");
+      const { ip } = await res.json();
+      const existing = policyEdits["ip_pool"] ? policyEdits["ip_pool"].split(",").map(s => s.trim()) : [];
+      if (!existing.includes(ip)) {
+        setPolicyEdits(prev => ({ ...prev, ip_pool: [...existing, ip].filter(Boolean).join(", ") }));
+        toast.success(`Captured IP: ${ip}`);
+      } else {
+        toast.info(`IP ${ip} is already in the pool.`);
+      }
+    } catch {
+      toast.error("Failed to detect IP. Check your internet connection.");
+    } finally {
+      setCapturingIp(false);
+    }
+  };
+
+  const syncGps = () => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by this browser.");
+      return;
+    }
+    setSyncingGps(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setPolicyEdits(prev => ({
+          ...prev,
+          geo_latitude: pos.coords.latitude.toFixed(6),
+          geo_longitude: pos.coords.longitude.toFixed(6),
+        }));
+        toast.success(`GPS synced: ${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`);
+        setSyncingGps(false);
+      },
+      (err) => {
+        toast.error(`GPS error: ${err.message}`);
+        setSyncingGps(false);
+      },
+      { timeout: 10000, enableHighAccuracy: true }
+    );
+  };
+
+  const ENFORCEMENT_OPTIONS = [
+    { value: "disabled", label: "Disabled — No restriction" },
+    { value: "alert",    label: "Alert — Flag as suspicious" },
+    { value: "enforce",  label: "Enforce — Reject check-in" },
+  ];
 
   const clockInPolicies = ["earliest_signin", "punctuality_limit", "grace_threshold", "absence_trigger"];
   const clockOutPolicies = ["half_day_boundary", "window_authorization", "standard_shift_end"];
@@ -333,23 +385,95 @@ export default function AdminAttendance() {
           </div>
 
           <div className="grid lg:grid-cols-2 gap-6">
-            <PolicyCard title="Network Isolation" icon={<Wifi size={18} />} tone="blue">
-              <div className="space-y-3">
-                <div className="text-xs tracking-wider uppercase text-muted-foreground font-bold">Authorized IP Pool</div>
-                <div className="flex gap-2">
-                  <input placeholder="e.g. 192.168.1.1, 10.0.0.1" className="flex-1 border border-border px-3 py-2 bg-white text-sm text-navy focus:outline-none focus:border-navy" />
-                  <button className="border border-navy text-navy px-4 py-2 text-xs font-bold tracking-wider hover:bg-navy hover:text-gold transition">CAPTURE IP</button>
+            {/* Network Isolation */}
+            <PolicyCard title="Network Isolation" icon={<Globe size={18} />} tone="blue">
+              <div className="space-y-4">
+                <div>
+                  <div className="text-xs tracking-wider uppercase text-muted-foreground font-bold mb-2">Authorized IP Pool</div>
+                  <div className="flex gap-2">
+                    <input
+                      value={policyEdits["ip_pool"] ?? ""}
+                      onChange={e => setPolicyEdits(prev => ({ ...prev, ip_pool: e.target.value }))}
+                      placeholder="e.g. 192.168.1.1, 10.0.0.1"
+                      className="flex-1 border border-border px-3 py-2 bg-white text-sm text-navy focus:outline-none focus:border-navy"
+                    />
+                    <button
+                      onClick={captureMyIp}
+                      disabled={capturingIp}
+                      className="border border-navy text-navy px-4 py-2 text-xs font-bold tracking-wider hover:bg-navy hover:text-gold transition flex items-center gap-2 whitespace-nowrap disabled:opacity-60"
+                    >
+                      {capturingIp ? <Loader2 size={12} className="animate-spin" /> : <Wifi size={12} />}
+                      {capturingIp ? "DETECTING..." : "CAPTURE MY IP"}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs tracking-wider uppercase text-muted-foreground font-bold mb-2">Enforcement Protocol</div>
+                  <select
+                    value={policyEdits["ip_enforcement"] ?? "disabled"}
+                    onChange={e => setPolicyEdits(prev => ({ ...prev, ip_enforcement: e.target.value }))}
+                    className="w-full border border-border bg-white px-3 py-2.5 text-sm text-navy font-semibold focus:outline-none focus:border-navy"
+                  >
+                    {ENFORCEMENT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
                 </div>
               </div>
             </PolicyCard>
 
+            {/* Geofence Registry */}
             <PolicyCard title="Geofence Registry" icon={<MapPin size={18} />} tone="purple">
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-2">
-                  <input placeholder="Latitude" className="border border-border px-3 py-2 bg-white text-sm text-navy focus:outline-none focus:border-navy" />
-                  <input placeholder="Longitude" className="border border-border px-3 py-2 bg-white text-sm text-navy focus:outline-none focus:border-navy" />
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <div className="text-xs tracking-wider uppercase text-muted-foreground font-bold mb-1.5">Latitude Reference</div>
+                    <input
+                      value={policyEdits["geo_latitude"] ?? ""}
+                      onChange={e => setPolicyEdits(prev => ({ ...prev, geo_latitude: e.target.value }))}
+                      placeholder="e.g. 6.5244"
+                      className="w-full border border-border px-3 py-2 bg-white text-sm text-navy focus:outline-none focus:border-navy"
+                    />
+                  </div>
+                  <div>
+                    <div className="text-xs tracking-wider uppercase text-muted-foreground font-bold mb-1.5">Longitude Reference</div>
+                    <input
+                      value={policyEdits["geo_longitude"] ?? ""}
+                      onChange={e => setPolicyEdits(prev => ({ ...prev, geo_longitude: e.target.value }))}
+                      placeholder="e.g. 3.3792"
+                      className="w-full border border-border px-3 py-2 bg-white text-sm text-navy focus:outline-none focus:border-navy"
+                    />
+                  </div>
                 </div>
-                <button className="w-full border border-navy text-navy py-2 text-xs font-bold tracking-wider hover:bg-navy hover:text-gold transition">SYNC COORDINATES</button>
+
+                <button
+                  onClick={syncGps}
+                  disabled={syncingGps}
+                  className="w-full border border-navy text-navy py-2 text-xs font-bold tracking-wider hover:bg-navy hover:text-gold transition flex items-center justify-center gap-2 disabled:opacity-60"
+                >
+                  {syncingGps ? <Loader2 size={12} className="animate-spin" /> : <MapPin size={12} />}
+                  {syncingGps ? "ACQUIRING GPS..." : "SYNC GPS COORDINATES"}
+                </button>
+
+                <div className="flex items-center justify-between">
+                  <div className="text-xs tracking-wider uppercase text-muted-foreground font-bold">Authorized Radius</div>
+                  <span className="text-xs font-bold text-navy border border-border px-2 py-0.5">{policyEdits["geo_radius"] ?? "200"}m</span>
+                </div>
+                <input
+                  type="range" min="50" max="5000" step="50"
+                  value={policyEdits["geo_radius"] ?? "200"}
+                  onChange={e => setPolicyEdits(prev => ({ ...prev, geo_radius: e.target.value }))}
+                  className="w-full accent-navy"
+                />
+
+                <div>
+                  <div className="text-xs tracking-wider uppercase text-muted-foreground font-bold mb-2">Accuracy Protocol</div>
+                  <select
+                    value={policyEdits["geo_enforcement"] ?? "disabled"}
+                    onChange={e => setPolicyEdits(prev => ({ ...prev, geo_enforcement: e.target.value }))}
+                    className="w-full border border-border bg-white px-3 py-2.5 text-sm text-navy font-semibold focus:outline-none focus:border-navy"
+                  >
+                    {ENFORCEMENT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                </div>
               </div>
             </PolicyCard>
           </div>

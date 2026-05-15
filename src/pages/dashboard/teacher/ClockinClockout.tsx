@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
-import { CalendarDays, LogIn, LogOut, CheckCircle2, Clock3, TriangleAlert, Loader2, UserX } from "lucide-react";
+import { CalendarDays, LogIn, LogOut, CheckCircle2, Clock3, TriangleAlert, Loader2, UserX, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
@@ -93,6 +93,98 @@ export default function ClockinClockout() {
     if (!teacherId) return;
     try {
       setSaving(true);
+
+      // 1. Load security policies
+      const { data: policyRows } = await supabase
+        .from("attendance_policies")
+        .select("key, value");
+      const policy: Record<string, string> = {};
+      (policyRows || []).forEach((p: any) => { policy[p.key] = p.value; });
+
+      // 2. IP Enforcement
+      const ipEnforcement = policy["ip_enforcement"] || "disabled";
+      const authorizedIps = (policy["ip_pool"] || "").split(",").map((s: string) => s.trim()).filter(Boolean);
+
+      if (ipEnforcement !== "disabled" && authorizedIps.length > 0) {
+        try {
+          const res = await fetch("https://api.ipify.org?format=json");
+          const { ip } = await res.json();
+          const ipAllowed = authorizedIps.includes(ip);
+
+          if (!ipAllowed) {
+            if (ipEnforcement === "enforce") {
+              toast.error(`Check-in rejected: Your IP (${ip}) is not in the authorized pool.`);
+              setSaving(false);
+              return;
+            } else if (ipEnforcement === "alert") {
+              toast.warning(`Security Alert: Your IP (${ip}) is outside the authorized pool. Your sign-in has been flagged.`);
+            }
+          }
+        } catch {
+          // If we can't fetch IP and enforcement is strict, block
+          if (ipEnforcement === "enforce") {
+            toast.error("Check-in rejected: Could not verify your IP address.");
+            setSaving(false);
+            return;
+          }
+        }
+      }
+
+      // 3. Geofence Enforcement
+      const geoEnforcement = policy["geo_enforcement"] || "disabled";
+      const geoLat = parseFloat(policy["geo_latitude"] || "");
+      const geoLon = parseFloat(policy["geo_longitude"] || "");
+      const geoRadius = parseFloat(policy["geo_radius"] || "200");
+
+      if (geoEnforcement !== "disabled" && !isNaN(geoLat) && !isNaN(geoLon)) {
+        await new Promise<void>((resolve) => {
+          if (!navigator.geolocation) {
+            if (geoEnforcement === "enforce") {
+              toast.error("Check-in rejected: Geolocation is required but not supported by your device.");
+              setSaving(false);
+            }
+            resolve();
+            return;
+          }
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              // Haversine distance in metres
+              const R = 6371000;
+              const dLat = (pos.coords.latitude - geoLat) * Math.PI / 180;
+              const dLon = (pos.coords.longitude - geoLon) * Math.PI / 180;
+              const a = Math.sin(dLat / 2) ** 2 +
+                Math.cos(geoLat * Math.PI / 180) * Math.cos(pos.coords.latitude * Math.PI / 180) *
+                Math.sin(dLon / 2) ** 2;
+              const distance = Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+
+              if (distance > geoRadius) {
+                if (geoEnforcement === "enforce") {
+                  toast.error(`Check-in rejected: You are ${distance}m from school (limit: ${geoRadius}m).`);
+                  setSaving(false);
+                  resolve();
+                  return;
+                } else if (geoEnforcement === "alert") {
+                  toast.warning(`Security Alert: You are ${distance}m from school. Sign-in has been flagged.`);
+                }
+              }
+              resolve();
+            },
+            (err) => {
+              if (geoEnforcement === "enforce") {
+                toast.error(`Check-in rejected: Location access denied — ${err.message}`);
+                setSaving(false);
+              }
+              resolve();
+            },
+            { timeout: 8000, enableHighAccuracy: true }
+          );
+        });
+
+        // If saving was set to false inside the promise, abort
+        if (!saving) return;
+      }
+
+      // 4. All checks passed — clock in
       await teacherAttendanceService.clockIn(teacherId);
       toast.success("Successfully signed in.");
       await loadRecords(teacherId);
