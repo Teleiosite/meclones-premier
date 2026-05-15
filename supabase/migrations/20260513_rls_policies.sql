@@ -36,9 +36,7 @@ CREATE POLICY "profiles_select_own" ON profiles FOR SELECT
 
 -- Admins can read all profiles (for user management UI)
 CREATE POLICY "profiles_select_admin" ON profiles FOR SELECT
-  USING (
-    EXISTS (SELECT 1 FROM profiles p WHERE p.id = auth.uid() AND p.role = 'admin')
-  );
+  USING ( (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin' );
 
 -- Users can update only their own profile
 CREATE POLICY "profiles_update_own" ON profiles FOR UPDATE
@@ -65,15 +63,11 @@ DROP POLICY IF EXISTS "students_admin_write" ON students;
 
 -- Admin: read all
 CREATE POLICY "students_admin" ON students FOR SELECT
-  USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
-  );
+  USING ( (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin' );
 
 -- Admin: write (insert/update/delete)
 CREATE POLICY "students_admin_write" ON students FOR ALL
-  USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
-  );
+  USING ( (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin' );
 
 -- Teacher: read students in their classes (via timetable)
 CREATE POLICY "students_teacher" ON students FOR SELECT
@@ -116,9 +110,7 @@ DROP POLICY IF EXISTS "teachers_self"         ON teachers;
 DROP POLICY IF EXISTS "teachers_read_auth"    ON teachers;
 
 CREATE POLICY "teachers_admin_write" ON teachers FOR ALL
-  USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
-  );
+  USING ( (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin' );
 
 -- Teachers read own record
 CREATE POLICY "teachers_self" ON teachers FOR SELECT
@@ -141,7 +133,7 @@ DROP POLICY IF EXISTS "parents_self"  ON parents;
 
 CREATE POLICY "parents_admin" ON parents FOR ALL
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    ( (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin' )
   );
 
 CREATE POLICY "parents_self" ON parents FOR SELECT
@@ -165,7 +157,7 @@ DROP POLICY IF EXISTS "attendance_parent"        ON attendance;
 
 CREATE POLICY "attendance_admin" ON attendance FOR ALL
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    ( (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin' )
   );
 
 -- Teacher reads attendance they have marked
@@ -228,7 +220,7 @@ DROP POLICY IF EXISTS "timetable_auth_read"  ON timetable;
 
 CREATE POLICY "timetable_admin" ON timetable FOR ALL
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    ( (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin' )
   );
 
 -- Any authenticated user can read the timetable (needed by all dashboards)
@@ -251,7 +243,7 @@ DROP POLICY IF EXISTS "assignments_student"        ON assignments;
 
 CREATE POLICY "assignments_admin" ON assignments FOR ALL
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    ( (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin' )
   );
 
 CREATE POLICY "assignments_teacher_read" ON assignments FOR SELECT
@@ -293,7 +285,7 @@ DROP POLICY IF EXISTS "submissions_teacher"        ON assignment_submissions;
 
 CREATE POLICY "submissions_admin" ON assignment_submissions FOR ALL
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    ( (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin' )
   );
 
 CREATE POLICY "submissions_student_read" ON assignment_submissions FOR SELECT
@@ -334,7 +326,7 @@ DROP POLICY IF EXISTS "exams_student"       ON exams;
 
 CREATE POLICY "exams_admin" ON exams FOR ALL
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    ( (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin' )
   );
 
 CREATE POLICY "exams_teacher_read" ON exams FOR SELECT
@@ -372,7 +364,7 @@ DROP POLICY IF EXISTS "results_parent"         ON results;
 
 CREATE POLICY "results_admin" ON results FOR ALL
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    ( (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin' )
   );
 
 CREATE POLICY "results_teacher_read" ON results FOR SELECT
@@ -429,7 +421,7 @@ DROP POLICY IF EXISTS "messages_admin"  ON messages;
 
 CREATE POLICY "messages_admin" ON messages FOR ALL
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    ( (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin' )
   );
 
 -- Users read messages they sent or received
@@ -459,7 +451,7 @@ DROP POLICY IF EXISTS "payments_student" ON payments;
 
 CREATE POLICY "payments_admin" ON payments FOR ALL
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    ( (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin' )
   );
 
 CREATE POLICY "payments_parent" ON payments FOR SELECT
@@ -493,7 +485,7 @@ DROP POLICY IF EXISTS "fees_auth_read" ON fees;
 
 CREATE POLICY "fees_admin" ON fees FOR ALL
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    ( (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin' )
   );
 
 CREATE POLICY "fees_auth_read" ON fees FOR SELECT
@@ -513,7 +505,7 @@ DROP POLICY IF EXISTS "clockin_teacher_write" ON teacher_clockin;
 
 CREATE POLICY "clockin_admin" ON teacher_clockin FOR ALL
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    ( (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin' )
   );
 
 CREATE POLICY "clockin_teacher_read" ON teacher_clockin FOR SELECT
@@ -544,7 +536,7 @@ DROP POLICY IF EXISTS "announcements_auth_read" ON announcements;
 
 CREATE POLICY "announcements_admin" ON announcements FOR ALL
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    ( (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin' )
   );
 
 CREATE POLICY "announcements_auth_read" ON announcements FOR SELECT
@@ -563,7 +555,7 @@ DROP POLICY IF EXISTS "admissions_public_apply" ON admissions;
 
 CREATE POLICY "admissions_admin" ON admissions FOR ALL
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    ( (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin' )
   );
 
 -- Allow anyone (even unauthenticated) to submit an application
@@ -583,7 +575,7 @@ DROP POLICY IF EXISTS "classes_auth_read" ON classes;
 
 CREATE POLICY "classes_admin" ON classes FOR ALL
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    ( (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin' )
   );
 
 CREATE POLICY "classes_auth_read" ON classes FOR SELECT

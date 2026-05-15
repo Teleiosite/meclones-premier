@@ -30,7 +30,7 @@ export default function StudentLayout() {
 export function StudentDashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  
+
   const [studentStats, setStudentStats] = useState({ subjects: "–", attendance: "–", pending: "–", average: "–", upcoming: "–" });
   const [courseList, setCourseList] = useState<any[]>([]);
   const [assignmentList, setAssignmentList] = useState<any[]>([]);
@@ -40,7 +40,7 @@ export function StudentDashboard() {
   const [studentName, setStudentName] = useState("Student");
   const [studentClass, setStudentClass] = useState("");
 
-  
+
   useEffect(() => {
     async function loadStudentData() {
       if (!user) return;
@@ -83,7 +83,7 @@ export function StudentDashboard() {
           .eq("class_name", student.class)
           .order("due_date", { ascending: true })
           .limit(3);
-        
+
         setAssignmentList(assignData || []);
 
         // 4. Fetch Results
@@ -93,7 +93,7 @@ export function StudentDashboard() {
           .eq("student_id", student.id)
           .order("created_at", { ascending: false })
           .limit(4);
-        
+
         setResultList(resData?.map(r => ({
           title: r.exams?.title || "Exam",
           date: r.exams?.date || "Recently",
@@ -105,7 +105,7 @@ export function StudentDashboard() {
         const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
         const todayDay = dayNames[new Date().getDay()];
         const todaySchedule = ttData?.filter(t => t.day === (todayDay as any)) || []; // Simplified check
-        
+
         setScheduleList(todaySchedule.map(t => ({
           time: t.time_slot,
           title: t.subject,
@@ -274,12 +274,11 @@ export function StudentDashboard() {
                     <div className="font-semibold text-navy">{s.title}</div>
                     <div className="text-[11px] text-muted-foreground">{s.room}</div>
                   </div>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 ${
-                    s.status === "Done" ? "bg-emerald-100 text-emerald-700" :
-                    s.status === "Now" ? "bg-gold/30 text-navy" :
-                    s.status === "Break" ? "bg-secondary text-muted-foreground" :
-                    "bg-violet-100 text-violet-700"
-                  }`}>{s.status}</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 ${s.status === "Done" ? "bg-emerald-100 text-emerald-700" :
+                      s.status === "Now" ? "bg-gold/30 text-navy" :
+                        s.status === "Break" ? "bg-secondary text-muted-foreground" :
+                          "bg-violet-100 text-violet-700"
+                    }`}>{s.status}</span>
                 </div>
               ))}
               {scheduleList.length === 0 && !loading && (

@@ -19,7 +19,7 @@ ALTER TABLE frontend_errors ENABLE ROW LEVEL SECURITY;
 -- 1. Admins can read all errors
 CREATE POLICY "admins_read_errors" ON frontend_errors FOR SELECT
   USING (
-    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+    ( (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin' )
   );
 
 -- 2. Anyone (even unauthenticated) can insert an error. 

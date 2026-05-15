@@ -26,7 +26,9 @@ import NotFound from "./pages/NotFound.tsx";
 // Admin sub-pages
 import AdminStudents from "./pages/dashboard/admin/Students";
 import AdminTeachers from "./pages/dashboard/admin/Teachers";
+import AdminParents from "./pages/dashboard/admin/Parents";
 import AdminAdmissions from "./pages/dashboard/admin/Admissions";
+
 import AdminFees from "./pages/dashboard/admin/Fees";
 import AdminAttendance from "./pages/dashboard/admin/Attendance";
 import AdminAcademics from "./pages/dashboard/admin/Academics";
@@ -101,7 +103,9 @@ const App = () => (
               <Route index element={<AdminDashboard />} />
               <Route path="students" element={<AdminStudents />} />
               <Route path="teachers" element={<AdminTeachers />} />
+              <Route path="parents" element={<AdminParents />} />
               <Route path="admissions" element={<AdminAdmissions />} />
+
               <Route path="fees" element={<AdminFees />} />
               <Route path="attendance" element={<AdminAttendance />} />
               <Route path="academics" element={<AdminAcademics />} />

@@ -24,17 +24,18 @@ const CLASS_OPTIONS = [
 ];
 
 export default function AdminStudents() {
-  const [students, setStudents]     = useState<Student[]>([]);
-  const [loading, setLoading]       = useState(true);
-  const [search, setSearch]         = useState("");
+  const [students, setStudents] = useState<Student[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
   const [classFilter, setClassFilter] = useState("All");
-  const [showAdd, setShowAdd]       = useState(false);
-  const [saving, setSaving]         = useState(false);
-  const [viewing, setViewing]       = useState<Student | null>(null);
-  const [form, setForm]             = useState({
+  const [showAdd, setShowAdd] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [viewing, setViewing] = useState<Student | null>(null);
+  const [form, setForm] = useState({
     admission_no: "", full_name: "", email: "", password: "", class: "Primary 1",
     gender: "Male", parent_name: "",
   });
+
 
   const fetchStudents = useCallback(async () => {
     setLoading(true);
@@ -58,16 +59,16 @@ export default function AdminStudents() {
     }
 
     const mapped: Student[] = (data || []).map((s: any) => ({
-      id:          s.id,
+      id: s.id,
       admission_no: s.admission_no,
-      full_name:   s.profiles?.full_name ?? "—",
-      email:       s.profiles?.email ?? "—",
-      class:       s.class,
-      gender:      s.gender ?? "—",
+      full_name: s.profiles?.full_name ?? "—",
+      email: s.profiles?.email ?? "—",
+      class: s.class,
+      gender: s.gender ?? "—",
       parent_name: s.parents?.profiles?.full_name ?? "—",
-      attendance:  100,
-      avg:         0,
-      status:      s.status,
+      attendance: 100,
+      avg: 0,
+      status: s.status,
     }));
 
     setStudents(mapped);

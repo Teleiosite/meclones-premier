@@ -81,15 +81,15 @@ export default function Contact() {
           <h2 className="display text-3xl text-navy mb-8">How can we help?</h2>
           <form onSubmit={onSubmit} className="space-y-5">
             <div className="grid md:grid-cols-2 gap-5">
-              <Field label="Your name" name="name" value={form.name} onChange={(val) => setForm({...form, name: val})} />
-              <Field label="Email address" name="email" type="email" value={form.email} onChange={(val) => setForm({...form, email: val})} />
+              <Field label="Your name" name="name" value={form.name} onChange={(val) => setForm({ ...form, name: val })} />
+              <Field label="Email address" name="email" type="email" value={form.email} onChange={(val) => setForm({ ...form, email: val })} />
             </div>
-            <Field label="Subject" name="subject" value={form.subject} onChange={(val) => setForm({...form, subject: val})} />
+            <Field label="Subject" name="subject" value={form.subject} onChange={(val) => setForm({ ...form, subject: val })} />
             <div>
               <label className="block text-[11px] font-bold tracking-[0.2em] text-navy mb-2">MESSAGE</label>
-              <textarea required rows={6} 
+              <textarea required rows={6}
                 value={form.message}
-                onChange={(e) => setForm({...form, message: e.target.value})}
+                onChange={(e) => setForm({ ...form, message: e.target.value })}
                 className="w-full border border-navy/20 px-4 py-3 bg-white text-navy focus:outline-none focus:border-navy" />
             </div>
             <button type="submit" disabled={loading} className="bg-navy text-white px-8 py-4 font-bold text-sm tracking-wider hover:bg-navy/90 transition flex items-center gap-2 disabled:opacity-60">

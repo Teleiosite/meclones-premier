@@ -15,14 +15,14 @@ type Teacher = {
 };
 
 export default function AdminTeachers() {
-  const [teachers, setTeachers]     = useState<Teacher[]>([]);
-  const [loading, setLoading]       = useState(true);
-  const [search, setSearch]         = useState("");
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("All");
-  const [showAdd, setShowAdd]       = useState(false);
-  const [saving, setSaving]         = useState(false);
-  const [viewing, setViewing]       = useState<Teacher | null>(null);
-  const [form, setForm]             = useState({
+  const [showAdd, setShowAdd] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [viewing, setViewing] = useState<Teacher | null>(null);
+  const [form, setForm] = useState({
     full_name: "", email: "", password: "", subject_specialization: "", qualification: "", employee_id: "",
   });
 
@@ -48,14 +48,14 @@ export default function AdminTeachers() {
     }
 
     const mapped: Teacher[] = (data || []).map((t: any) => ({
-      id:                     t.id,
-      employee_id:            t.employee_id ?? "—",
-      full_name:              t.profiles?.full_name ?? "—",
-      email:                  t.profiles?.email ?? "—",
+      id: t.id,
+      employee_id: t.employee_id ?? "—",
+      full_name: t.profiles?.full_name ?? "—",
+      email: t.profiles?.email ?? "—",
       subject_specialization: t.subject_specialization ?? "—",
-      qualification:          t.qualification ?? "—",
-      status:                 t.status ?? "Active",
-      profile_id:             t.profile_id,
+      qualification: t.qualification ?? "—",
+      status: t.status ?? "Active",
+      profile_id: t.profile_id,
     }));
 
     setTeachers(mapped);

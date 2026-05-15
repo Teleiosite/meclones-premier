@@ -19,6 +19,8 @@ export function useAuth() {
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setUser(session?.user ?? null);
+      setLoading(false); // Move this up! Don't block the app for the profile query
+      
       if (session?.user) {
         const { data } = await supabase
           .from("profiles")
@@ -27,7 +29,6 @@ export function useAuth() {
           .single();
         setProfile(data);
       }
-      setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
@@ -43,6 +44,7 @@ export function useAuth() {
         setProfile(null);
       }
     });
+
 
     return () => subscription.unsubscribe();
   }, []);

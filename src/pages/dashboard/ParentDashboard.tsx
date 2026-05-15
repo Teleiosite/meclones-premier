@@ -30,7 +30,7 @@ export default function ParentLayout() {
 export function ParentDashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  
+
   const [parentStats, setParentStats] = useState({ children: "–", attendance: "–", performance: "–", outstanding: "₦0" });
   const [childList, setChildList] = useState<any[]>([]);
   const [resultList, setResultList] = useState<any[]>([]);
@@ -38,7 +38,7 @@ export function ParentDashboard() {
   const [loading, setLoading] = useState(true);
   const [parentName, setParentName] = useState("Parent");
 
-  
+
   useEffect(() => {
     async function loadParentData() {
       if (!user) return;
@@ -69,7 +69,7 @@ export function ParentDashboard() {
             .in("student_id", studentIds)
             .order("created_at", { ascending: false })
             .limit(4);
-          
+
           setResultList(results?.map(r => ({
             child: (r.students as any)?.profiles?.full_name || "Child",
             title: r.exams?.title || "Exam",
@@ -84,7 +84,7 @@ export function ParentDashboard() {
             .in("student_id", studentIds)
             .order("created_at", { ascending: false })
             .limit(5);
-          
+
           setPaymentHistory(payments?.map(p => ({
             description: p.description || "Fee Payment",
             child: (p.students as any)?.profiles?.full_name || "Child",

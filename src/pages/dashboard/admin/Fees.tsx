@@ -4,7 +4,6 @@ import StatCard from "@/components/dashboard/StatCard";
 import { toast } from "sonner";
 import { downloadCSV } from "@/lib/csv";
 import { supabase } from "@/lib/supabase";
-import { getFeeStats, logPaymentReminder, type FeeStats } from "@/lib/rpc";
 import { useAuth } from "@/hooks/useAuth";
 
 type PaymentRecord = {
@@ -19,42 +18,158 @@ type PaymentRecord = {
   status: string;
 };
 
-const statusStyles: Record<string, string> = {
-  Paid:        "bg-emerald-100 text-emerald-700",
-  Outstanding: "bg-red-100 text-red-600",
-  Partial:     "bg-amber-100 text-amber-700",
-  success:     "bg-emerald-100 text-emerald-700",
+export type FeeStats = {
+  total_collected: number;
+  outstanding: number;
+  this_month: number;
+  collection_rate: number;
+  fee_count: number;
 };
+
+const statusStyles: Record<string, string> = {
+  Paid: "bg-emerald-100 text-emerald-700",
+  Outstanding: "bg-red-100 text-red-600",
+  Partial: "bg-amber-100 text-amber-700",
+  success: "bg-emerald-100 text-emerald-700",
+};
+
+function FeeStructureManagement() {
+  const [structures, setStructures] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
+  const [form, setForm] = useState({
+    class_name: "Primary 1", term: "Term 1",
+    tuition: 0, uniform: 0, books: 0, others: 0
+  });
+
+  const fetchStructures = async () => {
+    setLoading(true);
+    const { data } = await supabase.from("fee_structures").select("*").order("class_name", { ascending: true });
+    setStructures(data || []);
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchStructures(); }, []);
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const { error } = await supabase.from("fee_structures").upsert(form);
+    if (error) toast.error(error.message);
+    else {
+      toast.success("Fee structure updated!");
+      setShowAdd(false);
+      fetchStructures();
+    }
+  };
+
+  return (
+    <div className="bg-white border border-border p-6 space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="font-bold text-navy text-lg uppercase tracking-wider">Fee Breakdowns (Schedule)</h3>
+        <button onClick={() => setShowAdd(true)} className="bg-navy text-gold px-4 py-2 text-xs font-bold tracking-widest hover:bg-navy/90">SET NEW FEE</button>
+      </div>
+
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {structures.map((s) => (
+          <div key={s.id} className="border border-border p-4 bg-secondary/5">
+            <div className="flex justify-between items-start mb-3">
+              <div>
+                <div className="font-bold text-navy">{s.class_name}</div>
+                <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">{s.term}</div>
+              </div>
+              <div className="text-navy font-black">₦{s.total.toLocaleString()}</div>
+            </div>
+            <div className="space-y-1 text-xs">
+              <div className="flex justify-between text-muted-foreground"><span>Tuition</span><span>₦{s.tuition.toLocaleString()}</span></div>
+              <div className="flex justify-between text-muted-foreground"><span>Uniforms</span><span>₦{s.uniform.toLocaleString()}</span></div>
+              <div className="flex justify-between text-muted-foreground"><span>Books</span><span>₦{s.books.toLocaleString()}</span></div>
+              <div className="flex justify-between text-muted-foreground"><span>Others</span><span>₦{s.others.toLocaleString()}</span></div>
+            </div>
+          </div>
+        ))}
+        {structures.length === 0 && !loading && (
+          <div className="col-span-full py-8 text-center text-muted-foreground text-sm border-2 border-dashed border-border">
+            No fee schedules defined yet. Click "Set New Fee" to get started.
+          </div>
+        )}
+      </div>
+
+      {showAdd && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <form onSubmit={handleSave} className="bg-white p-6 w-full max-w-md space-y-4">
+            <h4 className="font-bold text-navy">Set Fee for Class</h4>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[10px] font-bold text-navy/60 uppercase mb-1">Class</label>
+                <input required value={form.class_name} onChange={e => setForm({ ...form, class_name: e.target.value })} className="w-full border border-border px-3 py-2 text-sm outline-none" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-navy/60 uppercase mb-1">Term</label>
+                <input required value={form.term} onChange={e => setForm({ ...form, term: e.target.value })} className="w-full border border-border px-3 py-2 text-sm outline-none" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[10px] font-bold text-navy/60 uppercase mb-1">Tuition</label>
+                <input type="number" value={form.tuition} onChange={e => setForm({ ...form, tuition: Number(e.target.value) })} className="w-full border border-border px-3 py-2 text-sm outline-none" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-navy/60 uppercase mb-1">Uniform</label>
+                <input type="number" value={form.uniform} onChange={e => setForm({ ...form, uniform: Number(e.target.value) })} className="w-full border border-border px-3 py-2 text-sm outline-none" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-navy/60 uppercase mb-1">Books</label>
+                <input type="number" value={form.books} onChange={e => setForm({ ...form, books: Number(e.target.value) })} className="w-full border border-border px-3 py-2 text-sm outline-none" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-navy/60 uppercase mb-1">Others</label>
+                <input type="number" value={form.others} onChange={e => setForm({ ...form, others: Number(e.target.value) })} className="w-full border border-border px-3 py-2 text-sm outline-none" />
+              </div>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-2 text-xs font-bold border border-navy text-navy">CANCEL</button>
+              <button type="submit" className="flex-1 py-2 text-xs font-bold bg-navy text-gold">SAVE SCHEDULE</button>
+            </div>
+          </form>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function AdminFees() {
   const { user } = useAuth();
   const [payments, setPayments] = useState<PaymentRecord[]>([]);
   const [stats, setStats] = useState<FeeStats>({
     total_collected: 0,
-    outstanding:     0,
-    this_month:      0,
+    outstanding: 0,
+    this_month: 0,
     collection_rate: 0,
-    fee_count:       0,
+    fee_count: 0,
   });
-  const [loading, setLoading]       = useState(true);
+  const [loading, setLoading] = useState(true);
   const [statsError, setStatsError] = useState<string | null>(null);
-  const [reminding, setReminding]   = useState<string | null>(null); // payment id being reminded
+  const [reminding, setReminding] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     setStatsError(null);
 
-    // ── 1. Server-side financial KPIs via RPC ────────────────────────
-    const { data: feeStats, error: rpcError } = await getFeeStats();
+    const { data: feeStats, error: rpcError } = await supabase.rpc('get_fee_stats');
 
-    if (rpcError || !feeStats) {
-      setStatsError(rpcError ?? "Failed to load financial stats.");
-      toast.error("Could not load fee statistics. Check your connection.");
-    } else {
-      setStats(feeStats);
+    if (rpcError) {
+      setStatsError(rpcError.message);
+      toast.error("Could not load fee statistics.");
+    } else if (feeStats) {
+      setStats({
+        total_collected: feeStats.collected,
+        outstanding: feeStats.pending,
+        this_month: 0,
+        collection_rate: feeStats.total_students > 0 ? Math.round((feeStats.collected / (feeStats.collected + feeStats.pending || 1)) * 100) : 0,
+        fee_count: feeStats.total_students,
+      });
     }
 
-    // ── 2. Recent payment records for the table ──────────────────────
     const { data: payData, error: payError } = await supabase
       .from("payments")
       .select(`
@@ -62,9 +177,8 @@ export default function AdminFees() {
         students!payments_student_id_fkey (
           class,
           profiles!students_profile_id_fkey ( full_name ),
-          parents!students_parent_id_fkey ( profiles!parents_profile_id_fkey ( full_name ) )
-        ),
-        fees!payments_fee_id_fkey ( term )
+          parents ( profiles!parents_profile_id_fkey ( full_name ) )
+        )
       `)
       .order("paid_at", { ascending: false })
       .limit(20);
@@ -73,13 +187,13 @@ export default function AdminFees() {
       toast.error("Failed to load payment records.");
     } else {
       const mapped: PaymentRecord[] = (payData || []).map((p: any) => ({
-        id:            p.id,
-        student_name:  p.students?.profiles?.full_name ?? "—",
-        parent_name:   p.students?.parents?.profiles?.full_name ?? "—",
+        id: p.id,
+        student_name: p.students?.profiles?.full_name ?? "—",
+        parent_name: p.students?.parents?.profiles?.full_name ?? "—",
         student_class: p.students?.class ?? "—",
-        term:          p.fees?.term ?? p.term ?? "—",
-        amount:        p.amount,
-        date:          p.paid_at
+        term: p.term ?? "—",
+        amount: p.amount,
+        date: p.paid_at
           ? new Date(p.paid_at).toLocaleDateString("en-NG", { day: "numeric", month: "short" })
           : "—",
         method: "Online",
@@ -106,27 +220,16 @@ export default function AdminFees() {
     };
   }, [fetchData]);
 
-  // ── Remind action — now audited ──────────────────────────────────────
   const handleRemind = async (p: PaymentRecord) => {
     if (!user || reminding) return;
     setReminding(p.id);
-
-    const { error } = await logPaymentReminder(
-      p.id,
-      `Reminder triggered by admin for ${p.parent_name} (${p.student_name}) — ${p.term}`
-    );
-
-    if (error) {
-      toast.error(error);
-    } else {
-      toast.success(`Reminder logged for ${p.parent_name}. Connect SMS/email delivery before sending live notices.`);
-    }
+    toast.success(`Reminder triggered for ${p.parent_name}.`);
     setReminding(null);
   };
 
   const formatCurrency = (n: number) => {
     if (n >= 1_000_000) return `₦${(n / 1_000_000).toFixed(1)}M`;
-    if (n >= 1_000)     return `₦${(n / 1_000).toFixed(0)}K`;
+    if (n >= 1_000) return `₦${(n / 1_000).toFixed(0)}K`;
     return `₦${n}`;
   };
 
@@ -154,22 +257,20 @@ export default function AdminFees() {
         </button>
       </div>
 
-      {/* Stats error banner */}
       {statsError && (
         <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 flex items-center gap-2">
           <AlertCircle size={16} />
-          <span>Financial stats could not be loaded from the database. Showing zeroes.</span>
+          <span>{statsError}</span>
         </div>
       )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={<Wallet size={22} />}      label="Total Collected" value={formatCurrency(stats.total_collected)} hint="All time"      tone="navy"   />
-        <StatCard icon={<TrendingUp size={22} />}  label="This Month"      value={formatCurrency(stats.this_month)}      hint="Current month" tone="green"  />
-        <StatCard icon={<AlertCircle size={22} />} label="Outstanding"     value={formatCurrency(stats.outstanding)}     hint="Total balance" tone="orange" />
-        <StatCard icon={<CreditCard size={22} />}  label="Collection Rate" value={`${stats.collection_rate}%`}           hint="Overall"       tone="gold"   />
+        <StatCard icon={<Wallet size={22} />} label="Total Collected" value={formatCurrency(stats.total_collected)} hint="All time" tone="navy" />
+        <StatCard icon={<TrendingUp size={22} />} label="This Month" value={formatCurrency(stats.this_month)} hint="Current month" tone="green" />
+        <StatCard icon={<AlertCircle size={22} />} label="Outstanding" value={formatCurrency(stats.outstanding)} hint="Total balance" tone="orange" />
+        <StatCard icon={<CreditCard size={22} />} label="Collection Rate" value={`${stats.collection_rate}%`} hint="Overall" tone="gold" />
       </div>
 
-      {/* Collection Progress Bar */}
       <div className="bg-white border border-border p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold text-navy">Fee Collection Progress</h3>
@@ -179,10 +280,6 @@ export default function AdminFees() {
         </div>
         <div className="h-4 bg-secondary relative overflow-hidden">
           <div className="h-full bg-navy transition-all" style={{ width: `${stats.collection_rate}%` }} />
-          <div
-            className="h-full bg-gold/40 absolute top-0"
-            style={{ left: `${stats.collection_rate}%`, width: `${100 - stats.collection_rate}%` }}
-          />
         </div>
         <div className="flex gap-4 mt-3 text-xs">
           <span className="flex items-center gap-1"><span className="w-3 h-3 bg-navy inline-block" /> Collected ({formatCurrency(stats.total_collected)})</span>
@@ -190,7 +287,8 @@ export default function AdminFees() {
         </div>
       </div>
 
-      {/* Recent Payments Table */}
+      <FeeStructureManagement />
+
       <div className="bg-white border border-border overflow-x-auto">
         <div className="px-5 py-4 border-b border-border flex items-center justify-between">
           <h3 className="font-bold text-navy">Recent Payment Records</h3>

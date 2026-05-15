@@ -13,7 +13,9 @@ const nav = [
   { to: "/dashboard/admin", label: "Dashboard", icon: <LayoutDashboard size={18} /> },
   { to: "/dashboard/admin/students", label: "Students", icon: <GraduationCap size={18} /> },
   { to: "/dashboard/admin/teachers", label: "Teachers", icon: <UserCog size={18} /> },
+  { to: "/dashboard/admin/parents", label: "Parents", icon: <Users size={18} /> },
   { to: "/dashboard/admin/admissions", label: "Admissions", icon: <FileText size={18} /> },
+
   { to: "/dashboard/admin/fees", label: "Fee Management", icon: <Banknote size={18} /> },
   { to: "/dashboard/admin/attendance", label: "Attendance", icon: <CalendarCheck size={18} /> },
   { to: "/dashboard/admin/academics", label: "Academics", icon: <BookOpenCheck size={18} /> },

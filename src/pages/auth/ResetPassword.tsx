@@ -53,7 +53,7 @@ export default function ResetPassword() {
     setSuccess(true);
     setLoading(false);
     toast.success("Password updated successfully!");
-    
+
     // Redirect after a short delay
     setTimeout(() => {
       navigate("/login");

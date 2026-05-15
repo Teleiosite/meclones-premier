@@ -31,14 +31,10 @@ export default function AuthGuard() {
       const { data: { session } } = await supabase.auth.getSession();
       setAuthenticated(!!session);
 
-      if (session?.user?.id) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", session.user.id)
-          .single();
-
-        setUserRole(normalizeRole(profile?.role));
+      if (session?.user) {
+        // Read role directly from session metadata - no database call needed!
+        const role = session.user.user_metadata?.role;
+        setUserRole(normalizeRole(role));
       } else {
         setUserRole(null);
       }
@@ -50,18 +46,15 @@ export default function AuthGuard() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setAuthenticated(!!session);
-      if (session?.user?.id) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", session.user.id)
-          .single();
-        setUserRole(normalizeRole(profile?.role));
+      if (session?.user) {
+        const role = session.user.user_metadata?.role;
+        setUserRole(normalizeRole(role));
       } else {
         setUserRole(null);
       }
       setChecking(false);
     });
+
 
     return () => subscription.unsubscribe();
   }, []);

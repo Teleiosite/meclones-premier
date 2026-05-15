@@ -16,7 +16,9 @@ type TeacherOption = { id: string; name: string; subject: string };
 const emptyForm: Form = { subject: "", teacher_id: "", room: "", color: "bg-navy" };
 
 export default function AdminTimetable() {
-  const [selectedClass, setSelectedClass] = useState(CLASSES[8]); // JSS 1A default
+  const [classList, setClassList] = useState<string[]>([]);
+  const [subjectList, setSubjectList] = useState<string[]>([]);
+  const [selectedClass, setSelectedClass] = useState("");
   const [schedule, setSchedule] = useState<SlotMap>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -24,21 +26,33 @@ export default function AdminTimetable() {
   const [form, setForm] = useState<Form>(emptyForm);
   const [teachers, setTeachers] = useState<TeacherOption[]>([]);
 
-  // Load teachers from Supabase (replaces hardcoded TEACHERS array)
+  // 1. Load Teachers, Classes, and Subjects
   useEffect(() => {
-    supabase
-      .from("teachers")
-      .select("id, subject_specialization, profiles!teachers_profile_id_fkey ( full_name )")
-      .then(({ data }) => {
-        setTeachers(
-          (data || []).map((t: any) => ({
-            id: t.id,
-            name: t.profiles?.full_name ?? "Unknown",
-            subject: t.subject_specialization ?? "",
-          }))
-        );
-      });
+    const init = async () => {
+      // Load Teachers
+      const { data: tData } = await supabase
+        .from("teachers")
+        .select("id, profile_id, subject_specialization, profiles!teachers_profile_id_fkey ( full_name )");
+      
+      setTeachers((tData || []).map((t: any) => ({
+        id: t.profile_id, // Use profile_id for linking
+        name: t.profiles?.full_name ?? "Unknown",
+        subject: t.subject_specialization ?? "",
+      })));
+
+      // Load Classes
+      const { data: cData } = await supabase.from("classes").select("name").order("name");
+      const names = (cData || []).map(c => c.name);
+      setClassList(names);
+      if (names.length > 0) setSelectedClass(names[0]);
+
+      // Load Subjects
+      const { data: sData } = await supabase.from("subjects").select("name").order("name");
+      setSubjectList((sData || []).map(s => s.name));
+    };
+    init();
   }, []);
+
 
   // Load timetable for selected class from Supabase
   const loadTimetable = useCallback(async (className: string) => {
@@ -172,11 +186,10 @@ export default function AdminTimetable() {
             value={selectedClass}
             onChange={(e) => setSelectedClass(e.target.value)}
           >
-            <optgroup label="Nursery">{CLASSES.slice(0, 2).map((c) => <option key={c}>{c}</option>)}</optgroup>
-            <optgroup label="Primary">{CLASSES.slice(2, 8).map((c) => <option key={c}>{c}</option>)}</optgroup>
-            <optgroup label="Junior Secondary">{CLASSES.slice(8, 14).map((c) => <option key={c}>{c}</option>)}</optgroup>
-            <optgroup label="Senior Secondary">{CLASSES.slice(14).map((c) => <option key={c}>{c}</option>)}</optgroup>
+            <option value="">— Select Class —</option>
+            {classList.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
+
         </div>
       </div>
 
@@ -262,8 +275,9 @@ export default function AdminTimetable() {
                 <select value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })}
                   className="w-full border border-border px-3 py-2.5 text-sm text-navy bg-white focus:border-navy focus:outline-none">
                   <option value="">— Select a subject —</option>
-                  {SUBJECTS.map((s) => <option key={s} value={s}>{s}</option>)}
+                  {subjectList.map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
+
               </div>
 
               <div>
