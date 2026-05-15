@@ -1,8 +1,35 @@
 # Meclones Academy — Source-Based Technical Audit
 
 > Senior full-stack architecture and security audit.  
-> Date: May 13, 2026.  
-> Scope: actual implementation under `src/` plus Supabase SQL/functions under `supabase/`. This document intentionally ignores prior README self-assessments and records what the code currently does.
+> Date: May 13–14, 2026.  
+> Scope: actual implementation under `src/` plus Supabase SQL/functions under `supabase/`.
+
+---
+
+## 🚀 Remediation Progress (May 14, 2026)
+
+We have successfully moved from **Audit** to **Remediation Phase 1**.
+
+### 1. Technical Debt & Stability
+- [x] **Resolved Hook Violations**: Fixed "Invalid hook call" crashes in `StudentDashboard`, `ParentDashboard`, and `TeacherDashboard` by moving logic into component bodies.
+- [x] **Environment Diagnostics**: Implemented `isMissingEnv` checks to fail visibly when `VITE_SUPABASE_URL` is undefined.
+- [x] **Route Restoration**: Resolved **404 errors** in the password reset flow by creating `src/pages/auth/ResetPassword.tsx` and registering the route.
+
+### 2. Authentication & User Provisioning
+- [x] **Secure Orchestration**: Created a production-hardened Database RPC `manage_user` (Security Definer) to handle atomic user creation.
+- [x] **Staff Onboarding**: Admin portal now supports full Teacher creation (Auth + Profile + Teacher record).
+- [x] **Student Onboarding**: Admin portal now supports full Student creation (Auth + Profile + Student record).
+- [x] **Admission Pipeline**: Approving an admission now automatically provisions **both** Parent and Student accounts and links them.
+
+### 3. Security & Database Hardening
+- [x] **RLS Recursion Fix**: Resolved "Infinite recursion" in `profiles` table by implementing a `get_my_role()` security-definer helper.
+- [x] **Schema Alignment**: Added missing `notes` column to `admissions` table.
+- [x] **Permission Grants**: Fixed 403 errors on public forms by granting explicit `INSERT` rights to `anon` and `authenticated` roles.
+- [x] **Search Path Isolation**: Hardened SQL functions against hijacking attacks using `SET search_path = public`.
+
+### 4. Feature Integration
+- [x] **Public Contact Form**: Integrated "How can we help?" form with Supabase `contact_enquiries` table.
+- [x] **Portal UI Fixes**: Restored missing Lucide icons and navigation hooks in the Parent Portal.
 
 ---
 

@@ -1,14 +1,43 @@
+import { useState } from "react";
 import PageHero from "@/components/site/PageHero";
 import campusImg from "@/assets/campus.jpg";
-import { Mail, Phone, MapPin, Clock } from "lucide-react";
+import { Mail, Phone, MapPin, Clock, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
 
 export default function Contact() {
-  const onSubmit = (e: React.FormEvent) => {
+  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    subject: "",
+    message: ""
+  });
+
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success("Message sent. We'll respond within 24 hours.");
-    (e.target as HTMLFormElement).reset();
+    setLoading(true);
+
+    try {
+      const { error } = await supabase.from("contact_enquiries").insert({
+        name: form.name,
+        email: form.email,
+        subject: form.subject,
+        message: form.message
+      });
+
+      if (error) throw error;
+
+      toast.success("Message sent! Our team will reach out to you shortly.");
+      setForm({ name: "", email: "", subject: "", message: "" });
+    } catch (err: any) {
+      console.error("Contact form error:", err);
+      toast.error(err.message || "Failed to send message. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
+
 
   return (
     <>
@@ -52,16 +81,20 @@ export default function Contact() {
           <h2 className="display text-3xl text-navy mb-8">How can we help?</h2>
           <form onSubmit={onSubmit} className="space-y-5">
             <div className="grid md:grid-cols-2 gap-5">
-              <Field label="Your name" name="name" />
-              <Field label="Email address" name="email" type="email" />
+              <Field label="Your name" name="name" value={form.name} onChange={(val) => setForm({...form, name: val})} />
+              <Field label="Email address" name="email" type="email" value={form.email} onChange={(val) => setForm({...form, email: val})} />
             </div>
-            <Field label="Subject" name="subject" />
+            <Field label="Subject" name="subject" value={form.subject} onChange={(val) => setForm({...form, subject: val})} />
             <div>
               <label className="block text-[11px] font-bold tracking-[0.2em] text-navy mb-2">MESSAGE</label>
-              <textarea required rows={6} className="w-full border border-navy/20 px-4 py-3 bg-white text-navy focus:outline-none focus:border-navy" />
+              <textarea required rows={6} 
+                value={form.message}
+                onChange={(e) => setForm({...form, message: e.target.value})}
+                className="w-full border border-navy/20 px-4 py-3 bg-white text-navy focus:outline-none focus:border-navy" />
             </div>
-            <button type="submit" className="bg-navy text-white px-8 py-4 font-bold text-sm tracking-wider hover:bg-navy/90 transition">
-              SEND MESSAGE →
+            <button type="submit" disabled={loading} className="bg-navy text-white px-8 py-4 font-bold text-sm tracking-wider hover:bg-navy/90 transition flex items-center gap-2 disabled:opacity-60">
+              {loading && <Loader2 size={16} className="animate-spin" />}
+              {loading ? "SENDING..." : "SEND MESSAGE →"}
             </button>
           </form>
         </div>
@@ -70,11 +103,12 @@ export default function Contact() {
   );
 }
 
-function Field({ label, name, type = "text" }: { label: string; name: string; type?: string }) {
+function Field({ label, name, value, onChange, type = "text" }: { label: string; name: string; value: string; onChange: (val: string) => void; type?: string }) {
   return (
     <div>
       <label className="block text-[11px] font-bold tracking-[0.2em] text-navy mb-2">{label.toUpperCase()}</label>
-      <input required type={type} name={name} className="w-full border border-navy/20 px-4 py-3 bg-white text-navy focus:outline-none focus:border-navy" />
+      <input required type={type} name={name} value={value} onChange={(e) => onChange(e.target.value)} className="w-full border border-navy/20 px-4 py-3 bg-white text-navy focus:outline-none focus:border-navy" />
     </div>
   );
 }
+
