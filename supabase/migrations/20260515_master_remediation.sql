@@ -18,7 +18,9 @@ ALTER TABLE public.teachers ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'Active
 
 
 ALTER TABLE public.timetable ADD COLUMN IF NOT EXISTS time_slot TEXT;
+ALTER TABLE public.timetable ADD COLUMN IF NOT EXISTS display_time TEXT;
 ALTER TABLE public.timetable ADD COLUMN IF NOT EXISTS day TEXT;
+
 ALTER TABLE public.timetable ADD COLUMN IF NOT EXISTS subject TEXT;
 ALTER TABLE public.timetable ADD COLUMN IF NOT EXISTS room TEXT;
 ALTER TABLE public.timetable ADD COLUMN IF NOT EXISTS color TEXT DEFAULT 'bg-navy';

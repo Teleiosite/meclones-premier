@@ -1,19 +1,18 @@
 import { useState, useEffect, useCallback } from "react";
-import { CLASSES, SUBJECTS, SlotData } from "@/store";
-import { X, Check, BookOpen, User, MapPin, Loader2, Save } from "lucide-react";
+import { X, Check, BookOpen, User, MapPin, Loader2, Save, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 
 const DAYS = ["MON", "TUE", "WED", "THU", "FRI"];
 const TIMES = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00"];
-const COLORS = ["bg-navy", "bg-emerald-600", "bg-violet-600", "bg-orange-500", "bg-teal-600", "bg-indigo-600", "bg-rose-500"];
+const COLORS = ["bg-navy", "bg-emerald-600", "bg-violet-600", "bg-orange-500", "bg-teal-600", "bg-indigo-600", "bg-rose-500", "bg-slate-500"];
 
 type EditingSlot = { time: string; day: string };
-type Form = { subject: string; teacher_id: string; room: string; color: string };
-type SlotMap = Record<string, Record<string, SlotData & { db_id?: string; teacher_id?: string } | null>>;
+type Form = { subject: string; teacher_id: string; room: string; color: string; display_time: string };
+type SlotMap = Record<string, Record<string, any | null>>;
 type TeacherOption = { id: string; name: string; subject: string };
 
-const emptyForm: Form = { subject: "", teacher_id: "", room: "", color: "bg-navy" };
+const emptyForm: Form = { subject: "", teacher_id: "", room: "", color: "bg-navy", display_time: "" };
 
 export default function AdminTimetable() {
   const [classList, setClassList] = useState<string[]>([]);
@@ -25,66 +24,47 @@ export default function AdminTimetable() {
   const [editingSlot, setEditingSlot] = useState<EditingSlot | null>(null);
   const [form, setForm] = useState<Form>(emptyForm);
   const [teachers, setTeachers] = useState<TeacherOption[]>([]);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
 
-  // 1. Load Teachers, Classes, and Subjects
+  // 1. Initial Load
   useEffect(() => {
     const init = async () => {
-      // Load Teachers
-      const { data: tData } = await supabase
-        .from("teachers")
-        .select("id, profile_id, subject_specialization, profiles!teachers_profile_id_fkey ( full_name )");
-      
+      const { data: tData } = await supabase.from("teachers").select("profile_id, subject_specialization, profiles!teachers_profile_id_fkey ( full_name )");
       setTeachers((tData || []).map((t: any) => ({
-        id: t.profile_id, // Use profile_id for linking
+        id: t.profile_id,
         name: t.profiles?.full_name ?? "Unknown",
         subject: t.subject_specialization ?? "",
       })));
 
-      // Load Classes
       const { data: cData } = await supabase.from("classes").select("name").order("name");
       const names = (cData || []).map(c => c.name);
       setClassList(names);
       if (names.length > 0) setSelectedClass(names[0]);
 
-      // Load Subjects
       const { data: sData } = await supabase.from("subjects").select("name").order("name");
       setSubjectList((sData || []).map(s => s.name));
     };
     init();
   }, []);
 
-
-  // Load timetable for selected class from Supabase
+  // 2. Load Timetable
   const loadTimetable = useCallback(async (className: string) => {
+    if (!className) return;
     setLoading(true);
-
-    // Build an empty slot grid
     const grid: SlotMap = {};
     for (const t of TIMES) {
       grid[t] = {};
       for (const d of DAYS) grid[t][d] = null;
     }
 
-    const { data, error } = await supabase
-      .from("timetable")
-      .select("id, time_slot, day, subject, room, color, teacher_id, teachers ( profiles ( full_name ) )")
-      .eq("class_name", className);
-
+    const { data, error } = await supabase.from("timetable").select("*").eq("class_name", className);
     if (error) { toast.error("Failed to load timetable."); setLoading(false); return; }
 
-    for (const row of (data || [])) {
-      if (grid[row.time_slot] !== undefined) {
-        const teacherName = (row as any).teachers?.profiles?.full_name ?? "—";
-        grid[row.time_slot][row.day] = {
-          subject: row.subject,
-          teacher: teacherName,
-          teacher_id: row.teacher_id,
-          room: row.room ?? "TBD",
-          color: row.color ?? "bg-navy",
-          db_id: row.id,
-        };
+    (data || []).forEach(row => {
+      if (grid[row.time_slot]) {
+        grid[row.time_slot][row.day] = row;
       }
-    }
+    });
 
     setSchedule(grid);
     setLoading(false);
@@ -92,15 +72,17 @@ export default function AdminTimetable() {
 
   useEffect(() => { loadTimetable(selectedClass); }, [selectedClass, loadTimetable]);
 
+  // 3. Handlers
   const openEdit = (time: string, day: string) => {
-    if (time === "12:00") return;
     const slot = schedule[time]?.[day];
     setEditingSlot({ time, day });
-    setForm(
-      slot
-        ? { subject: slot.subject ?? "", teacher_id: (slot as any).teacher_id ?? "", room: slot.room ?? "", color: slot.color ?? "bg-navy" }
-        : emptyForm
-    );
+    setForm(slot ? {
+      subject: slot.subject || "",
+      teacher_id: slot.teacher_id || "",
+      room: slot.room || "",
+      color: slot.color || "bg-navy",
+      display_time: slot.display_time || time // Fallback to bucket time
+    } : { ...emptyForm, display_time: time });
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -109,141 +91,154 @@ export default function AdminTimetable() {
     setSaving(true);
 
     const existingSlot = schedule[editingSlot.time]?.[editingSlot.day];
-    const dbId = (existingSlot as any)?.db_id;
+    const dbId = existingSlot?.id;
 
     if (!form.subject.trim()) {
-      // Clear the slot
-      if (dbId) {
-        const { error } = await supabase.from("timetable").delete().eq("id", dbId);
-        if (error) { toast.error(error.message); setSaving(false); return; }
-      }
+      if (dbId) await supabase.from("timetable").delete().eq("id", dbId);
       toast.success("Slot cleared.");
     } else {
-      if (!form.teacher_id) { toast.error("Please select a teacher."); setSaving(false); return; }
-
       const payload = {
         class_name: selectedClass,
         time_slot: editingSlot.time,
         day: editingSlot.day,
         subject: form.subject,
-        teacher_id: form.teacher_id,
+        teacher_id: form.teacher_id || null,
         room: form.room || "TBD",
         color: form.color,
+        display_time: form.display_time
       };
 
-      const { error } = dbId
+      const { error } = dbId 
         ? await supabase.from("timetable").update(payload).eq("id", dbId)
         : await supabase.from("timetable").insert(payload);
 
       if (error) { toast.error(error.message); setSaving(false); return; }
-
-      const teacherName = teachers.find((t) => t.id === form.teacher_id)?.name ?? form.teacher_id;
-      toast.success(`Saved: ${form.subject} → ${teacherName} (${editingSlot.day} ${editingSlot.time})`);
+      toast.success("Slot saved successfully.");
     }
 
     setEditingSlot(null);
     setSaving(false);
-    loadTimetable(selectedClass); // Reload from DB to confirm
-  };
-
-  const handleClear = async () => {
-    if (!editingSlot) return;
-    const existingSlot = schedule[editingSlot.time]?.[editingSlot.day];
-    const dbId = (existingSlot as any)?.db_id;
-    if (dbId) {
-      const { error } = await supabase.from("timetable").delete().eq("id", dbId);
-      if (error) { toast.error(error.message); return; }
-    }
-    toast.success("Slot cleared.");
-    setEditingSlot(null);
     loadTimetable(selectedClass);
   };
 
-  const slotAt = (time: string, day: string) => schedule[time]?.[day] ?? null;
+  // 4. Drag & Drop Logic
+  const onDragStart = (e: React.DragEvent, slot: any) => {
+    if (!slot) return;
+    setDraggingId(slot.id);
+    e.dataTransfer.setData("slot_id", slot.id);
+    e.dataTransfer.effectAllowed = "move";
+  };
 
-  const totalSlots = TIMES.filter((t) => t !== "12:00").length * DAYS.length;
-  const filledSlots = TIMES.filter((t) => t !== "12:00").reduce(
-    (acc, t) => acc + DAYS.filter((d) => !!slotAt(t, d)).length, 0
-  );
+  const onDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const onDrop = async (e: React.DragEvent, targetTime: string, targetDay: string) => {
+    e.preventDefault();
+    const slotId = e.dataTransfer.getData("slot_id");
+    if (!slotId) return;
+
+    // Don't drop on the same spot
+    const currentSlot = schedule[targetTime]?.[targetDay];
+    if (currentSlot && currentSlot.id === slotId) return;
+
+    // Update in Supabase
+    const { error } = await supabase
+      .from("timetable")
+      .update({ time_slot: targetTime, day: targetDay })
+      .eq("id", slotId);
+
+    if (error) {
+      toast.error("Could not move slot. It might conflict with another entry.");
+    } else {
+      toast.success("Schedule updated.");
+      loadTimetable(selectedClass);
+    }
+    setDraggingId(null);
+  };
+
+  const formatCurrency = (n: number) => `₦${n.toLocaleString()}`;
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="font-display text-3xl font-black text-navy">Timetable Manager</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">
-            Set the weekly schedule for each class. All changes are saved to the database.
-          </p>
+          <h1 className="font-display text-3xl font-black text-navy uppercase tracking-tight">Timetable Manager</h1>
+          <p className="text-muted-foreground text-sm">Drag and drop slots to reschedule. Click to edit details.</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="text-right text-sm">
-            <div className="text-xs text-muted-foreground font-bold uppercase tracking-wider">Coverage</div>
-            <div className="font-bold text-navy">{filledSlots} / {totalSlots} slots</div>
-          </div>
           <select
-            className="border border-border px-4 py-2.5 bg-white text-navy font-bold text-sm focus:outline-none focus:border-navy"
+            className="border border-border px-4 py-2.5 bg-white text-navy font-bold text-sm focus:border-navy outline-none"
             value={selectedClass}
             onChange={(e) => setSelectedClass(e.target.value)}
           >
             <option value="">— Select Class —</option>
             {classList.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
-
         </div>
       </div>
 
-      {/* Active teacher legend (from DB) */}
-      <div className="flex flex-wrap gap-2">
-        {teachers.map((t) => {
-          const active = TIMES.some((time) => DAYS.some((day) => (slotAt(time, day) as any)?.teacher_id === t.id));
-          return (
-            <div key={t.id} className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium border ${active ? "bg-navy/5 border-navy/30 text-navy" : "bg-secondary border-border text-muted-foreground"}`}>
-              <User size={11} />
-              {t.name}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Timetable grid */}
       {loading ? (
         <div className="bg-white border border-border h-64 flex items-center justify-center">
           <Loader2 size={24} className="animate-spin text-muted-foreground" />
         </div>
       ) : (
-        <div className="bg-white border border-border overflow-x-auto">
-          <table className="w-full text-sm min-w-[700px]">
+        <div className="bg-white border border-border overflow-x-auto shadow-sm">
+          <table className="w-full text-sm min-w-[800px]">
             <thead className="border-b border-border bg-secondary/40">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-bold tracking-wider text-muted-foreground w-20">TIME</th>
+                <th className="px-4 py-4 text-left text-[10px] font-black tracking-widest text-muted-foreground w-24">TIME</th>
                 {DAYS.map((d) => (
-                  <th key={d} className="px-3 py-3 text-center text-xs font-bold tracking-wider text-navy">{d}</th>
+                  <th key={d} className="px-3 py-4 text-center text-xs font-black tracking-widest text-navy">{d}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {TIMES.map((t) => (
-                <tr key={t} className="hover:bg-secondary/20 transition">
-                  <td className="px-4 py-2 font-mono text-xs text-muted-foreground font-bold whitespace-nowrap">{t}</td>
+                <tr key={t} className="group transition-colors">
+                  <td className="px-4 py-6 font-mono text-[10px] text-muted-foreground font-black bg-secondary/10">{t}</td>
                   {DAYS.map((d) => {
-                    const slot = slotAt(t, d);
-                    const isBreak = t === "12:00";
+                    const slot = schedule[t]?.[d];
+                    const isLunch = slot?.subject?.toLowerCase().includes("lunch") || slot?.subject?.toLowerCase().includes("break");
+                    
                     return (
-                      <td key={d} className={`px-1.5 py-1.5 ${!isBreak ? "cursor-pointer" : ""}`} onClick={() => !isBreak && openEdit(t, d)}>
-                        {isBreak ? (
-                          <div className="bg-secondary text-muted-foreground text-[10px] font-bold px-2 py-3 text-center">LUNCH BREAK</div>
-                        ) : slot ? (
-                          <div className={`${slot.color} text-white px-2 py-2 text-left relative group`}>
-                            <div className="text-[11px] font-bold leading-tight truncate">{slot.subject}</div>
-                            <div className="text-[10px] opacity-80 mt-0.5 truncate">{slot.teacher}</div>
-                            <div className="text-[10px] opacity-60 mt-0.5">{slot.room}</div>
-                            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-                              <span className="text-[10px] font-black uppercase tracking-widest text-white">Edit</span>
+                      <td 
+                        key={d} 
+                        onDragOver={onDragOver}
+                        onDrop={(e) => onDrop(e, t, d)}
+                        className={`p-1.5 border-l border-border/50 relative min-h-[80px] w-[18%] ${draggingId ? "bg-accent/5" : ""}`}
+                      >
+                        {slot ? (
+                          <div 
+                            draggable 
+                            onDragStart={(e) => onDragStart(e, slot)}
+                            onClick={() => openEdit(t, d)}
+                            className={`${slot.color || 'bg-navy'} text-white p-3 shadow-md cursor-grab active:cursor-grabbing hover:brightness-110 transition-all relative group h-full flex flex-col justify-between`}
+                          >
+                            <GripVertical size={12} className="absolute right-2 top-2 opacity-30" />
+                            <div>
+                              <div className="text-[10px] font-black tracking-widest opacity-70 mb-1 uppercase">
+                                {slot.display_time || t}
+                              </div>
+                              <div className="text-xs font-black leading-tight uppercase">{slot.subject}</div>
+                            </div>
+                            <div className="mt-3 space-y-0.5">
+                              <div className="text-[10px] font-bold opacity-80 flex items-center gap-1">
+                                <User size={10} /> {teachers.find(tr => tr.id === slot.teacher_id)?.name || "—"}
+                              </div>
+                              <div className="text-[10px] font-bold opacity-60 flex items-center gap-1">
+                                <MapPin size={10} /> {slot.room || "TBD"}
+                              </div>
                             </div>
                           </div>
                         ) : (
-                          <div className="h-14 border-2 border-dashed border-border/40 flex items-center justify-center text-muted-foreground/30 text-xl font-light hover:border-navy/40 hover:text-navy/40 transition">+</div>
+                          <div 
+                            onClick={() => openEdit(t, d)}
+                            className="h-full min-h-[70px] border-2 border-dashed border-border/40 hover:border-navy/40 flex items-center justify-center text-muted-foreground/20 text-2xl font-light transition-colors cursor-pointer"
+                          >
+                            +
+                          </div>
                         )}
                       </td>
                     );
@@ -255,67 +250,104 @@ export default function AdminTimetable() {
         </div>
       )}
 
-      <p className="text-xs text-muted-foreground text-center">Click any empty slot to assign · Click filled slot to edit or clear · All saves go directly to Supabase</p>
-
-      {/* Edit modal */}
+      {/* Edit Modal */}
       {editingSlot && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setEditingSlot(null)}>
-          <form onSubmit={handleSave} onClick={(e) => e.stopPropagation()} className="bg-white w-full max-w-md shadow-2xl border border-border overflow-hidden">
-            <div className="bg-navy text-white px-6 py-4 flex items-center justify-between">
+        <div className="fixed inset-0 bg-navy/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <form onSubmit={handleSave} className="bg-white w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="bg-navy text-gold px-6 py-4 flex items-center justify-between border-b border-gold/20">
               <div>
-                <h3 className="font-display text-lg font-black">{editingSlot.day} · {editingSlot.time}</h3>
-                <p className="text-white/60 text-xs mt-0.5">{selectedClass}</p>
+                <h3 className="font-display text-lg font-black uppercase tracking-tight">{editingSlot.day} · Schedule</h3>
+                <p className="text-white/60 text-[10px] font-bold tracking-widest">{selectedClass}</p>
               </div>
-              <button type="button" onClick={() => setEditingSlot(null)} className="text-white/60 hover:text-white"><X size={20} /></button>
+              <button type="button" onClick={() => setEditingSlot(null)} className="text-white/60 hover:text-white transition"><X size={20} /></button>
             </div>
 
             <div className="p-6 space-y-4">
-              <div>
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 flex items-center gap-1"><BookOpen size={12} /> Subject</label>
-                <select value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })}
-                  className="w-full border border-border px-3 py-2.5 text-sm text-navy bg-white focus:border-navy focus:outline-none">
-                  <option value="">— Select a subject —</option>
-                  {subjectList.map((s) => <option key={s} value={s}>{s}</option>)}
-                </select>
-
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-navy/60 uppercase tracking-widest">Time Label</label>
+                  <input 
+                    placeholder="e.g. 10:20 - 11:30" 
+                    value={form.display_time}
+                    onChange={(e) => setForm({ ...form, display_time: e.target.value })}
+                    className="w-full border border-border px-3 py-2 text-sm text-navy focus:border-navy outline-none font-bold" 
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-navy/60 uppercase tracking-widest">Room</label>
+                  <input 
+                    placeholder="e.g. Lab 1" 
+                    value={form.room}
+                    onChange={(e) => setForm({ ...form, room: e.target.value })}
+                    className="w-full border border-border px-3 py-2 text-sm text-navy focus:border-navy outline-none font-bold" 
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 flex items-center gap-1"><User size={12} /> Assign Teacher</label>
-                <select value={form.teacher_id} onChange={(e) => setForm({ ...form, teacher_id: e.target.value })}
-                  className="w-full border border-border px-3 py-2.5 text-sm text-navy bg-white focus:border-navy focus:outline-none">
-                  <option value="">— Select a teacher —</option>
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-navy/60 uppercase tracking-widest">Subject</label>
+                <select 
+                  value={form.subject} 
+                  onChange={(e) => setForm({ ...form, subject: e.target.value })}
+                  className="w-full border border-border px-3 py-2 text-sm text-navy bg-white focus:border-navy outline-none font-bold"
+                >
+                  <option value="">— Select Subject —</option>
+                  <option value="LUNCH BREAK">🍱 LUNCH BREAK</option>
+                  <option value="SHORT BREAK">☕ SHORT BREAK</option>
+                  {subjectList.map((s) => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-navy/60 uppercase tracking-widest">Assign Teacher</label>
+                <select 
+                  value={form.teacher_id} 
+                  onChange={(e) => setForm({ ...form, teacher_id: e.target.value })}
+                  className="w-full border border-border px-3 py-2 text-sm text-navy bg-white focus:border-navy outline-none font-bold"
+                >
+                  <option value="">— Select Teacher —</option>
                   {teachers.map((t) => <option key={t.id} value={t.id}>{t.name} ({t.subject})</option>)}
                 </select>
               </div>
 
-              <div>
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 flex items-center gap-1"><MapPin size={12} /> Room / Location</label>
-                <input placeholder="e.g. Room 12, Lab 1, Hall" value={form.room}
-                  onChange={(e) => setForm({ ...form, room: e.target.value })}
-                  className="w-full border border-border px-3 py-2.5 text-sm text-navy focus:border-navy focus:outline-none" />
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 block">Slot Colour</label>
-                <div className="flex gap-2">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-navy/60 uppercase tracking-widest block">Color Code</label>
+                <div className="flex flex-wrap gap-2">
                   {COLORS.map((color) => (
-                    <button key={color} type="button" onClick={() => setForm({ ...form, color })}
-                      className={`w-7 h-7 flex items-center justify-center ${color} transition ${form.color === color ? "ring-2 ring-offset-2 ring-navy scale-110" : "opacity-70 hover:opacity-100"}`}>
-                      {form.color === color && <Check size={13} className="text-white" />}
+                    <button 
+                      key={color} 
+                      type="button" 
+                      onClick={() => setForm({ ...form, color })}
+                      className={`w-8 h-8 flex items-center justify-center ${color} hover:brightness-110 transition ${form.color === color ? "ring-2 ring-navy ring-offset-2 scale-110" : "opacity-60"}`}
+                    >
+                      {form.color === color && <Check size={14} className="text-white" />}
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div className="flex gap-3 pt-1">
-                <button type="submit" disabled={saving}
-                  className="flex-1 bg-navy text-gold py-2.5 font-bold text-xs tracking-wider hover:bg-navy/90 transition flex items-center justify-center gap-2 disabled:opacity-60">
-                  {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                  {saving ? "SAVING..." : "SAVE SLOT"}
+              <div className="flex gap-3 pt-4">
+                <button 
+                  type="submit" 
+                  disabled={saving}
+                  className="flex-1 bg-navy text-gold py-3 font-black text-xs tracking-widest hover:bg-navy/90 transition flex items-center justify-center gap-2 disabled:opacity-60"
+                >
+                  {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                  SAVE CHANGES
                 </button>
-                <button type="button" onClick={handleClear}
-                  className="px-5 py-2.5 border border-rose-200 text-rose-600 font-bold text-xs tracking-wider hover:bg-rose-50 transition">
+                <button 
+                  type="button" 
+                  onClick={async () => {
+                    const slot = schedule[editingSlot.time]?.[editingSlot.day];
+                    if (slot?.id) {
+                      await supabase.from("timetable").delete().eq("id", slot.id);
+                      toast.success("Slot cleared.");
+                      setEditingSlot(null);
+                      loadTimetable(selectedClass);
+                    }
+                  }}
+                  className="px-6 py-3 border border-red-200 text-red-600 font-black text-xs tracking-widest hover:bg-red-50 transition"
+                >
                   CLEAR
                 </button>
               </div>
