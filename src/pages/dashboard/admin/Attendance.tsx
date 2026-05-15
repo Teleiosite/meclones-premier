@@ -19,10 +19,10 @@ const classes = ["Primary 3A", "Primary 5A", "JSS 1A", "JSS 2B", "SS 1A", "SS 2B
 const generateStudents = (cls: string) => [
   { id: 1, name: "David Okafor", present: true, timeIn: "07:41 AM", timeOut: "03:21 PM", ip: "10.12.0.14" },
   { id: 2, name: "Grace Okafor", present: true, timeIn: "07:43 AM", timeOut: "03:18 PM", ip: "10.12.0.21" },
-  { id: 3, name: "Amina Yusuf", present: false, timeIn: "ΓÇö", timeOut: "ΓÇö", ip: "ΓÇö" },
+  { id: 3, name: "Amina Yusuf", present: false, timeIn: "—", timeOut: "—", ip: "—" },
   { id: 4, name: "Emeka Eze", present: true, timeIn: "07:49 AM", timeOut: "03:24 PM", ip: "10.12.0.17" },
   { id: 5, name: "Fatima Bello", present: true, timeIn: "07:45 AM", timeOut: "03:16 PM", ip: "10.12.0.25" },
-  { id: 6, name: "Tunde Adesanya", present: false, timeIn: "ΓÇö", timeOut: "ΓÇö", ip: "ΓÇö" },
+  { id: 6, name: "Tunde Adesanya", present: false, timeIn: "—", timeOut: "—", ip: "—" },
   { id: 7, name: "Ngozi Nwosu", present: true, timeIn: "07:39 AM", timeOut: "03:26 PM", ip: "10.12.0.12" },
   { id: 8, name: "Chukwudi Obi", present: true, timeIn: "07:46 AM", timeOut: "03:19 PM", ip: "10.12.0.18" },
 ].map((s) => ({ ...s, class: cls }));
@@ -73,8 +73,8 @@ function PolicyCard({
   return (
     <div className="bg-white border border-border p-6 space-y-5">
       <div className="flex items-center gap-3">
-        <div className={`h-10 w-10 rounded-xl grid place-items-center ${toneClass}`}>{icon}</div>
-        <h3 className="text-3xl font-display font-black text-navy leading-none">{title}</h3>
+        <div className={`h-10 w-10 grid place-items-center ${toneClass}`}>{icon}</div>
+        <h3 className="text-2xl font-display font-black text-navy leading-none">{title}</h3>
       </div>
       {children}
     </div>
@@ -99,8 +99,10 @@ export default function AdminAttendance() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-4xl font-black text-navy">Attendance Matrix <span className="text-gold">ΓÇ║</span> <span className="text-2xl text-muted-foreground">{tabs.find((t) => t.key === tab)?.label}</span></h1>
-        <p className="text-muted-foreground text-lg max-w-3xl">Advanced biometric monitoring and network-level security policing for organizational check-in integrity.</p>
+        <h1 className="font-display text-3xl font-black text-navy flex items-center gap-2">
+          Attendance Matrix <span className="text-gold text-2xl mt-1">›</span> <span className="text-xl text-muted-foreground mt-1">{tabs.find((t) => t.key === tab)?.label}</span>
+        </h1>
+        <p className="text-muted-foreground text-sm max-w-3xl mt-1">Advanced biometric monitoring and network-level security policing for organizational check-in integrity.</p>
       </div>
 
       <div className="inline-flex items-center gap-1 bg-white border border-border p-1">
@@ -108,24 +110,24 @@ export default function AdminAttendance() {
           <button
             key={item.key}
             onClick={() => setTab(item.key)}
-            className={`px-5 py-3 text-sm font-bold transition flex items-center gap-2 ${
-              tab === item.key ? "bg-navy text-gold" : "text-muted-foreground hover:text-navy"
+            className={`px-5 py-2.5 text-xs font-bold tracking-wider transition flex items-center gap-2 uppercase ${
+              tab === item.key ? "bg-navy text-gold" : "text-muted-foreground hover:text-navy hover:bg-secondary/50"
             }`}
           >
             {item.icon}
-            {item.label.toUpperCase()}
+            {item.label}
           </button>
         ))}
       </div>
 
       {tab === "surveillance" && (
         <>
-          <div className="flex flex-wrap gap-3 items-center">
+          <div className="flex flex-wrap gap-3 items-center bg-white border border-border p-4">
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search employee by name or ID..."
-              className="flex-1 min-w-[260px] border border-border bg-white px-4 py-3"
+              className="flex-1 min-w-[260px] border border-border bg-white px-3 py-2 text-sm text-navy focus:outline-none focus:border-navy"
             />
             <select
               value={selectedClass}
@@ -133,69 +135,100 @@ export default function AdminAttendance() {
                 setSelectedClass(e.target.value);
                 setStudents(generateStudents(e.target.value));
               }}
-              className="border border-border bg-white px-4 py-3"
+              className="border border-border bg-white px-3 py-2 text-sm text-navy focus:outline-none focus:border-navy"
             >
               {classes.map((c) => (
                 <option key={c}>{c}</option>
               ))}
             </select>
-            <label className="border border-border bg-white px-4 py-3 flex items-center gap-2 text-sm">
-              <CalendarDays size={16} />
+            <label className="border border-border bg-white px-3 py-2 flex items-center gap-2 text-sm text-navy">
+              <CalendarDays size={14} className="text-muted-foreground" />
               <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="bg-transparent outline-none" />
             </label>
-            <button className="border border-border p-3 bg-white" onClick={() => setQuery("")}>
-              <RefreshCcw size={16} />
+            <button className="border border-navy bg-white text-navy px-3 py-2 text-xs font-bold tracking-wider hover:bg-navy hover:text-gold transition flex items-center gap-2" onClick={() => setQuery("")}>
+              <RefreshCcw size={14} /> RESET
             </button>
           </div>
 
-          <div className="bg-white border border-border overflow-hidden">
-            <div className="grid grid-cols-7 text-[11px] tracking-[0.2em] uppercase text-muted-foreground font-bold border-b border-border px-6 py-4">
-              <div>Employee</div><div>Log Date</div><div>Clock In</div><div>Clock Out</div><div>Network IP</div><div>Outcome</div><div>Validation</div>
+          <div className="bg-white border border-border overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-secondary/40 border-b border-border">
+                <tr>
+                  {["EMPLOYEE", "LOG DATE", "CLOCK IN", "CLOCK OUT", "NETWORK IP", "OUTCOME", "VALIDATION"].map((h) => (
+                    <th key={h} className="text-left px-5 py-3 text-xs font-bold tracking-wider text-muted-foreground">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="text-navy divide-y divide-border">
+                {filteredRows.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-16 text-center text-muted-foreground text-sm italic">
+                      No check-in entries found.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredRows.map((row) => (
+                    <tr key={row.id} className="hover:bg-secondary/20 transition">
+                      <td className="px-5 py-4 font-semibold text-navy">{row.name}</td>
+                      <td className="px-5 py-4 text-muted-foreground">{date}</td>
+                      <td className="px-5 py-4 font-mono text-xs">{row.timeIn}</td>
+                      <td className="px-5 py-4 font-mono text-xs">{row.timeOut}</td>
+                      <td className="px-5 py-4 font-mono text-xs text-muted-foreground">{row.ip}</td>
+                      <td className="px-5 py-4">
+                        <span className={`text-[10px] font-bold px-2 py-1 ${row.present ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}>
+                          {row.present ? "VERIFIED" : "FAILED"}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 text-xs font-bold text-muted-foreground">{row.present ? "PASS" : "REVIEW"}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+            <div className="px-5 py-3 text-xs text-muted-foreground flex justify-between border-t border-border bg-secondary/10">
+              <span>Real-time telemetry data</span>
+              <span>{filteredRows.length} log(s)</span>
             </div>
-            {filteredRows.length === 0 ? (
-              <div className="h-52 grid place-items-center text-muted-foreground italic">No check-in entries found.</div>
-            ) : (
-              filteredRows.map((row) => (
-                <div key={row.id} className="grid grid-cols-7 px-6 py-4 border-b border-border/60 text-sm items-center">
-                  <div className="font-semibold text-navy">{row.name}</div>
-                  <div>{date}</div>
-                  <div>{row.timeIn}</div>
-                  <div>{row.timeOut}</div>
-                  <div>{row.ip}</div>
-                  <div className={row.present ? "text-emerald-600 font-semibold" : "text-rose-500 font-semibold"}>{row.present ? "Verified" : "Failed"}</div>
-                  <div>{row.present ? "Pass" : "Review"}</div>
-                </div>
-              ))
-            )}
-            <div className="px-6 py-3 text-xs text-muted-foreground flex justify-between"><span>Real-time telemetry data</span><span>{filteredRows.length} log(s)</span></div>
           </div>
         </>
       )}
 
       {tab === "anomaly" && (
         <>
-          <div className="border border-rose-200 bg-rose-50/60 p-6 flex items-start gap-4">
-            <div className="h-12 w-12 rounded-2xl bg-rose-500 text-white grid place-items-center shadow"><ShieldAlert size={22} /></div>
+          <div className="border border-rose-200 bg-rose-50 p-6 flex items-start gap-4">
+            <div className="h-10 w-10 bg-rose-600 text-white grid place-items-center shrink-0"><ShieldAlert size={20} /></div>
             <div>
-              <h3 className="text-2xl font-display font-black text-rose-800">Security Alert Protocol</h3>
+              <h3 className="text-xl font-display font-black text-rose-900">Security Alert Protocol</h3>
               <p className="text-rose-700 text-sm mt-1">These records were automatically flagged by the anti-cheat engine. Detection triggers include: unrecognized device IDs, multiple IPs, or bulk sign-ins within 5 minutes.</p>
             </div>
           </div>
 
-          <div className="bg-white border border-border overflow-hidden">
-            <div className="grid grid-cols-6 text-[11px] tracking-[0.2em] uppercase text-muted-foreground font-bold border-b border-border px-6 py-4">
-              <div>Identified Employee</div><div>Event Date</div><div>Checkpoint</div><div>Source IP</div><div>Hardware Identity</div><div>Violation Logic</div>
-            </div>
-            {anomalyRows.map((row, idx) => (
-              <div key={idx} className="grid grid-cols-6 px-6 py-4 border-b border-border/60 text-sm">
-                <div className="font-semibold text-navy">{row.employee}</div>
-                <div>{row.date}</div>
-                <div>{row.checkpoint}</div>
-                <div>{row.sourceIp}</div>
-                <div>{row.hardware}</div>
-                <div className="text-rose-600 font-semibold">{row.logic}</div>
-              </div>
-            ))}
+          <div className="bg-white border border-border overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-secondary/40 border-b border-border">
+                <tr>
+                  {["IDENTIFIED EMPLOYEE", "EVENT DATE", "CHECKPOINT", "SOURCE IP", "HARDWARE IDENTITY", "VIOLATION LOGIC"].map((h) => (
+                    <th key={h} className="text-left px-5 py-3 text-xs font-bold tracking-wider text-muted-foreground">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="text-navy divide-y divide-border">
+                {anomalyRows.map((row, idx) => (
+                  <tr key={idx} className="hover:bg-secondary/20 transition">
+                    <td className="px-5 py-4 font-semibold text-navy">{row.employee}</td>
+                    <td className="px-5 py-4 text-muted-foreground">{row.date}</td>
+                    <td className="px-5 py-4">{row.checkpoint}</td>
+                    <td className="px-5 py-4 font-mono text-xs">{row.sourceIp}</td>
+                    <td className="px-5 py-4 text-muted-foreground">{row.hardware}</td>
+                    <td className="px-5 py-4">
+                      <span className="text-[10px] font-bold px-2 py-1 bg-rose-100 text-rose-700">
+                        {row.logic.toUpperCase()}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </>
       )}
@@ -205,50 +238,50 @@ export default function AdminAttendance() {
           <div className="grid lg:grid-cols-2 gap-6">
             <PolicyCard title="Clock-In Matrix" icon={<Clock3 size={18} />} tone="green">
               <div className="grid sm:grid-cols-2 gap-4 text-sm">
-                <div className="space-y-2"><div className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground">Earliest Sign-In</div><div className="bg-secondary border border-border p-3 font-bold text-navy">07:00 AM</div></div>
-                <div className="space-y-2"><div className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground">Punctuality Limit</div><div className="bg-secondary border border-border p-3 font-bold text-navy">09:00 AM</div></div>
-                <div className="space-y-2"><div className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground">Grace Threshold (Min)</div><div className="bg-secondary border border-border p-3 font-bold text-navy">15</div></div>
-                <div className="space-y-2"><div className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground">Absence Trigger</div><div className="bg-secondary border border-border p-3 font-bold text-navy">11:00 AM</div></div>
+                <div className="space-y-1"><div className="text-xs tracking-wider uppercase text-muted-foreground font-bold">Earliest Sign-In</div><div className="bg-secondary border border-border p-3 font-bold text-navy">07:00 AM</div></div>
+                <div className="space-y-1"><div className="text-xs tracking-wider uppercase text-muted-foreground font-bold">Punctuality Limit</div><div className="bg-secondary border border-border p-3 font-bold text-navy">09:00 AM</div></div>
+                <div className="space-y-1"><div className="text-xs tracking-wider uppercase text-muted-foreground font-bold">Grace Threshold (Min)</div><div className="bg-secondary border border-border p-3 font-bold text-navy">15</div></div>
+                <div className="space-y-1"><div className="text-xs tracking-wider uppercase text-muted-foreground font-bold">Absence Trigger</div><div className="bg-secondary border border-border p-3 font-bold text-navy">11:00 AM</div></div>
               </div>
             </PolicyCard>
 
             <PolicyCard title="Clock-Out Matrix" icon={<Clock3 size={18} />} tone="amber">
               <div className="grid sm:grid-cols-2 gap-4 text-sm">
-                <div className="space-y-2"><div className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground">Half-Day Boundary</div><div className="bg-secondary border border-border p-3 font-bold text-navy">01:00 PM</div></div>
-                <div className="space-y-2"><div className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground">Window Authorization</div><div className="bg-secondary border border-border p-3 font-bold text-navy">04:00 PM</div></div>
-                <div className="space-y-2 sm:col-span-2"><div className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground">Standard Shift End</div><div className="bg-secondary border border-border p-3 font-bold text-navy">06:00 PM</div></div>
+                <div className="space-y-1"><div className="text-xs tracking-wider uppercase text-muted-foreground font-bold">Half-Day Boundary</div><div className="bg-secondary border border-border p-3 font-bold text-navy">01:00 PM</div></div>
+                <div className="space-y-1"><div className="text-xs tracking-wider uppercase text-muted-foreground font-bold">Window Authorization</div><div className="bg-secondary border border-border p-3 font-bold text-navy">04:00 PM</div></div>
+                <div className="space-y-1 sm:col-span-2"><div className="text-xs tracking-wider uppercase text-muted-foreground font-bold">Standard Shift End</div><div className="bg-secondary border border-border p-3 font-bold text-navy">06:00 PM</div></div>
               </div>
             </PolicyCard>
           </div>
 
           <div className="grid lg:grid-cols-2 gap-6">
             <PolicyCard title="Network Isolation" icon={<Wifi size={18} />} tone="blue">
-              <div className="space-y-4">
-                <div className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground">Authorized IP Pool</div>
-                <div className="flex gap-3">
-                  <input placeholder="e.g. 192.168.1.1, 10.0.0.1" className="flex-1 border border-border rounded-md px-3 py-3 bg-secondary" />
-                  <button className="border border-primary text-primary px-4 rounded-md font-semibold hover:bg-primary/5 transition">Capture My IP</button>
+              <div className="space-y-3">
+                <div className="text-xs tracking-wider uppercase text-muted-foreground font-bold">Authorized IP Pool</div>
+                <div className="flex gap-2">
+                  <input placeholder="e.g. 192.168.1.1, 10.0.0.1" className="flex-1 border border-border px-3 py-2 bg-white text-sm text-navy focus:outline-none focus:border-navy" />
+                  <button className="border border-navy text-navy px-4 py-2 text-xs font-bold tracking-wider hover:bg-navy hover:text-gold transition">CAPTURE IP</button>
                 </div>
               </div>
             </PolicyCard>
 
             <PolicyCard title="Geofence Registry" icon={<MapPin size={18} />} tone="purple">
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <input placeholder="Latitude reference" className="border border-border rounded-md px-3 py-3 bg-secondary" />
-                  <input placeholder="Longitude reference" className="border border-border rounded-md px-3 py-3 bg-secondary" />
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <input placeholder="Latitude" className="border border-border px-3 py-2 bg-white text-sm text-navy focus:outline-none focus:border-navy" />
+                  <input placeholder="Longitude" className="border border-border px-3 py-2 bg-white text-sm text-navy focus:outline-none focus:border-navy" />
                 </div>
-                <button className="w-full border border-primary text-primary rounded-md py-3 font-semibold hover:bg-primary/5 transition">Sync GPS Coordinates</button>
+                <button className="w-full border border-navy text-navy py-2 text-xs font-bold tracking-wider hover:bg-navy hover:text-gold transition">SYNC COORDINATES</button>
               </div>
             </PolicyCard>
           </div>
 
-          <div className="flex justify-end">
+          <div className="flex justify-end pt-4">
             <button
               onClick={() => toast.success(`Saved: ${presentCount} present, ${students.length - presentCount} absent in ${selectedClass}.`)}
-              className="bg-navy text-gold font-bold px-8 py-3 hover:bg-navy/90 transition"
+              className="bg-navy text-gold px-6 py-3 text-xs font-bold tracking-wider hover:bg-navy/90 transition flex items-center gap-2"
             >
-              Lock Configuration
+              <Shield size={14} /> LOCK CONFIGURATION
             </button>
           </div>
         </div>

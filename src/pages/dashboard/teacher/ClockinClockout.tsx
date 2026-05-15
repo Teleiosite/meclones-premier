@@ -31,81 +31,80 @@ export default function ClockinClockout() {
       </div>
 
       {/* Clock-in card */}
-      <div className="bg-white border border-border rounded-xl p-8 grid lg:grid-cols-[1.4fr_1fr_auto] gap-8 items-center">
+      <div className="bg-white border border-border p-6 grid lg:grid-cols-[1.4fr_1fr_auto] gap-8 items-center">
         <div>
           <div className="font-display text-5xl font-black text-navy tracking-tight">{timeText}</div>
-          <div className="text-muted-foreground text-lg mt-2 font-medium">{dateText}</div>
-          <div className="text-emerald-500 font-bold mt-3 text-sm">Check-in window open until 23:00</div>
+          <div className="text-muted-foreground text-sm mt-1">{dateText}</div>
+          <div className="text-emerald-600 font-bold mt-2 text-xs tracking-wider uppercase">Check-in window open until 23:00</div>
         </div>
 
         <div className="grid grid-cols-2 gap-4 text-center items-center">
           <div className="border-r border-border pr-6">
-            <div className="text-[11px] tracking-[0.15em] text-muted-foreground font-bold uppercase">Check In</div>
+            <div className="text-xs tracking-wider text-muted-foreground font-bold uppercase">Check In</div>
             <div className="text-2xl font-black text-navy mt-2">{checkIn ?? "—"}</div>
           </div>
           <div className="pl-2">
-            <div className="text-[11px] tracking-[0.15em] text-muted-foreground font-bold uppercase">Check Out</div>
+            <div className="text-xs tracking-wider text-muted-foreground font-bold uppercase">Check Out</div>
             <div className="text-2xl font-black text-navy mt-2">{checkOut ?? "—"}</div>
           </div>
         </div>
 
-        <div className="space-y-3 min-w-[140px]">
+        <div className="space-y-3 min-w-[160px]">
           <button 
             onClick={() => setCheckIn(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }))} 
             disabled={!!checkIn}
-            className={`w-full flex items-center justify-center gap-2 px-5 py-3.5 text-sm font-bold rounded-lg transition-all ${!checkIn ? "bg-emerald-500 text-white hover:bg-emerald-600 shadow-sm" : "bg-secondary text-muted-foreground cursor-not-allowed"}`}
+            className={`w-full flex items-center justify-center gap-2 px-4 py-3 text-xs font-bold tracking-wider transition uppercase ${!checkIn ? "bg-navy text-gold hover:bg-navy/90" : "bg-secondary text-muted-foreground border border-border cursor-not-allowed"}`}
           >
-            <LogIn size={18} />
+            <LogIn size={14} />
             Sign In
           </button>
           <button 
             onClick={() => setCheckOut(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }))} 
             disabled={!checkIn || !!checkOut}
-            className={`w-full flex items-center justify-center gap-2 px-5 py-3.5 text-sm font-bold rounded-lg transition-all ${checkIn && !checkOut ? "bg-rose-500 text-white hover:bg-rose-600 shadow-sm" : "bg-secondary border border-border text-muted-foreground cursor-not-allowed"}`}
+            className={`w-full flex items-center justify-center gap-2 px-4 py-3 text-xs font-bold tracking-wider transition uppercase ${checkIn && !checkOut ? "border border-navy text-navy hover:bg-navy hover:text-gold" : "bg-secondary border border-border text-muted-foreground cursor-not-allowed"}`}
           >
-            <LogOut size={18} />
+            <LogOut size={14} />
             Sign Out
           </button>
         </div>
       </div>
 
       {/* Info banner */}
-      <div className="bg-[#fff8f1] border border-orange-100 rounded-lg p-5 text-sm text-navy flex flex-wrap items-center gap-x-8 gap-y-3">
-        <span className="flex items-center gap-2.5">
-          <Clock3 size={16} className="text-orange-500" /> 
+      <div className="bg-secondary/40 border border-border p-4 text-sm text-navy flex flex-wrap items-center gap-x-8 gap-y-3">
+        <span className="flex items-center gap-2">
+          <Clock3 size={16} className="text-navy" /> 
           Sign-in window: <strong>19:12 - 23:00</strong>
         </span>
-        <span className="flex items-center gap-2.5">
-          <TriangleAlert size={16} className="text-amber-500" /> 
-          Late after: <strong>22:00</strong> (+15 min grace)
+        <span className="flex items-center gap-2">
+          <TriangleAlert size={16} className="text-amber-600" /> 
+          Late after: <strong>22:00</strong> <span className="text-xs text-muted-foreground ml-1">(+15 min grace)</span>
         </span>
-        <span className="flex items-center gap-2.5">
-          <CheckCircle2 size={16} className="text-emerald-500" /> 
+        <span className="flex items-center gap-2">
+          <CheckCircle2 size={16} className="text-emerald-600" /> 
           Sign-out opens: <strong>16:00</strong>
         </span>
       </div>
 
       {/* Attendance history table */}
-      <div className="bg-white border border-border rounded-xl overflow-hidden shadow-sm">
-        <div className="px-6 py-4 border-b border-border flex items-center gap-2.5 text-navy font-bold">
-          <CalendarDays size={18} className="text-orange-500" />
+      <div className="bg-white border border-border overflow-hidden">
+        <div className="px-5 py-4 border-b border-border flex items-center gap-2 text-navy text-sm font-bold">
+          <CalendarDays size={16} className="text-navy" />
           Recent Attendance History
         </div>
         
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead>
-              <tr className="text-[11px] tracking-[0.15em] uppercase text-muted-foreground font-bold border-b border-border bg-secondary/30">
-                <th className="text-left px-6 py-4">Date</th>
-                <th className="text-left px-6 py-4">Check In</th>
-                <th className="text-left px-6 py-4">Check Out</th>
-                <th className="text-left px-6 py-4">Status</th>
+            <thead className="bg-secondary/40 border-b border-border">
+              <tr>
+                {["DATE", "CHECK IN", "CHECK OUT", "STATUS"].map((h) => (
+                  <th key={h} className="text-left px-5 py-3 text-xs font-bold tracking-wider text-muted-foreground">{h}</th>
+                ))}
               </tr>
             </thead>
-            <tbody>
+            <tbody className="text-navy divide-y divide-border">
               {/* No records placeholder */}
               <tr>
-                <td colSpan={4} className="py-12 text-center text-muted-foreground font-medium">
+                <td colSpan={4} className="py-16 text-center text-muted-foreground text-sm">
                   No attendance records yet.
                 </td>
               </tr>
