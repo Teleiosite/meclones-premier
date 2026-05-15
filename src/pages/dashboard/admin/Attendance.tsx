@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, useEffect, type ReactNode } from "react";
 import {
   AlertTriangle,
   CalendarDays,
@@ -11,21 +11,10 @@ import {
   Wifi,
 } from "lucide-react";
 import { toast } from "sonner";
+import { attendanceService, AttendanceRecord } from "../../../services/attendanceService";
+import { employeeService, Employee } from "../../../services/employeeService";
 
 type TabKey = "surveillance" | "anomaly" | "policy";
-
-const classes = ["Primary 3A", "Primary 5A", "JSS 1A", "JSS 2B", "SS 1A", "SS 2B"];
-
-const generateStudents = (cls: string) => [
-  { id: 1, name: "David Okafor", present: true, timeIn: "07:41 AM", timeOut: "03:21 PM", ip: "10.12.0.14" },
-  { id: 2, name: "Grace Okafor", present: true, timeIn: "07:43 AM", timeOut: "03:18 PM", ip: "10.12.0.21" },
-  { id: 3, name: "Amina Yusuf", present: false, timeIn: "—", timeOut: "—", ip: "—" },
-  { id: 4, name: "Emeka Eze", present: true, timeIn: "07:49 AM", timeOut: "03:24 PM", ip: "10.12.0.17" },
-  { id: 5, name: "Fatima Bello", present: true, timeIn: "07:45 AM", timeOut: "03:16 PM", ip: "10.12.0.25" },
-  { id: 6, name: "Tunde Adesanya", present: false, timeIn: "—", timeOut: "—", ip: "—" },
-  { id: 7, name: "Ngozi Nwosu", present: true, timeIn: "07:39 AM", timeOut: "03:26 PM", ip: "10.12.0.12" },
-  { id: 8, name: "Chukwudi Obi", present: true, timeIn: "07:46 AM", timeOut: "03:19 PM", ip: "10.12.0.18" },
-].map((s) => ({ ...s, class: cls }));
 
 const anomalyRows = [
   {
@@ -82,19 +71,106 @@ function PolicyCard({
 }
 
 export default function AdminAttendance() {
-  const [selectedClass, setSelectedClass] = useState(classes[0]);
-  const [students, setStudents] = useState(generateStudents(selectedClass));
+  const [selectedClass, setSelectedClass] = useState("Primary 3A");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [query, setQuery] = useState("");
   const [tab, setTab] = useState<TabKey>("surveillance");
+  
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
 
-  const filteredRows = useMemo(() => {
+  // Dynamically derive available departments/classes from employees
+  const availableClasses = useMemo(() => {
+    if (employees.length === 0) return ["Primary 3A", "Staff"];
+    const depts = new Set(employees.map(e => e.department));
+    return Array.from(depts).sort();
+  }, [employees]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const emps = await employeeService.getEmployees();
+        setEmployees(emps);
+      } catch (err: any) {
+        toast.error(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    const loadAttendance = async () => {
+      try {
+        setLoading(true);
+        const records = await attendanceService.getAttendanceByDate(date);
+        setAttendanceRecords(records);
+      } catch (err: any) {
+        toast.error(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadAttendance();
+  }, [date]);
+
+  const classEmployees = useMemo(() => {
+    return employees.filter(e => e.department === selectedClass);
+  }, [employees, selectedClass]);
+
+  const gridRows = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return students;
-    return students.filter((row) => row.name.toLowerCase().includes(q) || row.id.toString().includes(q));
-  }, [students, query]);
+    
+    return classEmployees
+      .filter(e => e.full_name.toLowerCase().includes(q) || e.id.toLowerCase().includes(q))
+      .map(emp => {
+        const att = attendanceRecords.find(r => r.employee_id === emp.id);
+        const present = att?.status === 'present' || att?.status === 'late';
+        
+        return {
+          id: emp.id,
+          name: emp.full_name,
+          present,
+          timeIn: att?.check_in ? new Date(att.check_in).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : "—",
+          timeOut: att?.check_out ? new Date(att.check_out).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : "—",
+          ip: "10.12.0." + (emp.id.charCodeAt(0) % 255), // Mock IP
+        };
+      });
+  }, [classEmployees, attendanceRecords, query]);
 
-  const presentCount = students.filter((s) => s.present).length;
+  const presentCount = gridRows.filter((s) => s.present).length;
+
+  const handleLockConfiguration = async () => {
+    try {
+      setSaving(true);
+      // Create records for everyone currently shown as absent who doesn't have a record
+      // In a real app, this would be an admin UI where you check boxes
+      const recordsToSave: Partial<AttendanceRecord>[] = classEmployees.map(emp => {
+        const existing = attendanceRecords.find(r => r.employee_id === emp.id);
+        return {
+          id: existing?.id,
+          employee_id: emp.id,
+          date,
+          status: existing?.status || 'absent'
+        };
+      });
+
+      await attendanceService.bulkUpsertAttendance(recordsToSave);
+      toast.success(`Saved: ${presentCount} present, ${classEmployees.length - presentCount} absent in ${selectedClass}.`);
+      
+      // Refresh
+      const newRecs = await attendanceService.getAttendanceByDate(date);
+      setAttendanceRecords(newRecs);
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -126,24 +202,22 @@ export default function AdminAttendance() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search employee by name or ID..."
+              placeholder="Search employee by name..."
               className="flex-1 min-w-[260px] border border-border bg-white px-3 py-2 text-sm text-navy focus:outline-none focus:border-navy"
             />
             <select
               value={selectedClass}
-              onChange={(e) => {
-                setSelectedClass(e.target.value);
-                setStudents(generateStudents(e.target.value));
-              }}
+              onChange={(e) => setSelectedClass(e.target.value)}
               className="border border-border bg-white px-3 py-2 text-sm text-navy focus:outline-none focus:border-navy"
+              disabled={loading}
             >
-              {classes.map((c) => (
+              {availableClasses.map((c) => (
                 <option key={c}>{c}</option>
               ))}
             </select>
             <label className="border border-border bg-white px-3 py-2 flex items-center gap-2 text-sm text-navy">
               <CalendarDays size={14} className="text-muted-foreground" />
-              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="bg-transparent outline-none" />
+              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="bg-transparent outline-none" disabled={loading} />
             </label>
             <button className="border border-navy bg-white text-navy px-3 py-2 text-xs font-bold tracking-wider hover:bg-navy hover:text-gold transition flex items-center gap-2" onClick={() => setQuery("")}>
               <RefreshCcw size={14} /> RESET
@@ -160,14 +234,18 @@ export default function AdminAttendance() {
                 </tr>
               </thead>
               <tbody className="text-navy divide-y divide-border">
-                {filteredRows.length === 0 ? (
+                {loading ? (
+                  <tr>
+                    <td colSpan={7} className="py-16 text-center text-muted-foreground text-sm italic">Loading attendance data...</td>
+                  </tr>
+                ) : gridRows.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="py-16 text-center text-muted-foreground text-sm italic">
-                      No check-in entries found.
+                      No check-in entries found for {selectedClass}.
                     </td>
                   </tr>
                 ) : (
-                  filteredRows.map((row) => (
+                  gridRows.map((row) => (
                     <tr key={row.id} className="hover:bg-secondary/20 transition">
                       <td className="px-5 py-4 font-semibold text-navy">{row.name}</td>
                       <td className="px-5 py-4 text-muted-foreground">{date}</td>
@@ -187,7 +265,7 @@ export default function AdminAttendance() {
             </table>
             <div className="px-5 py-3 text-xs text-muted-foreground flex justify-between border-t border-border bg-secondary/10">
               <span>Real-time telemetry data</span>
-              <span>{filteredRows.length} log(s)</span>
+              <span>{gridRows.length} log(s)</span>
             </div>
           </div>
         </>
@@ -278,10 +356,11 @@ export default function AdminAttendance() {
 
           <div className="flex justify-end pt-4">
             <button
-              onClick={() => toast.success(`Saved: ${presentCount} present, ${students.length - presentCount} absent in ${selectedClass}.`)}
-              className="bg-navy text-gold px-6 py-3 text-xs font-bold tracking-wider hover:bg-navy/90 transition flex items-center gap-2"
+              onClick={handleLockConfiguration}
+              disabled={saving || loading}
+              className={`bg-navy text-gold px-6 py-3 text-xs font-bold tracking-wider transition flex items-center gap-2 ${saving ? 'opacity-70 cursor-not-allowed' : 'hover:bg-navy/90'}`}
             >
-              <Shield size={14} /> LOCK CONFIGURATION
+              <Shield size={14} /> {saving ? "SAVING..." : "LOCK CONFIGURATION"}
             </button>
           </div>
         </div>
