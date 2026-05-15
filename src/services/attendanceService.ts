@@ -102,7 +102,7 @@ export const adminAttendanceService = {
   async getTeacherAttendanceByDate(date: string): Promise<any[]> {
     const { data: teachers, error: tErr } = await supabase
       .from('teachers')
-      .select('id, name, subject_specialization, status, profiles(full_name)')
+      .select('id, subject_specialization, status, profiles!teachers_profile_id_fkey(full_name)')
       .eq('status', 'Active');
 
     if (tErr) throw new Error(`Failed to load teachers: ${tErr.message}`);
@@ -116,9 +116,10 @@ export const adminAttendanceService = {
 
     return (teachers || []).map((t: any) => {
       const record = (clockins || []).find((c: any) => c.teacher_id === t.id) || null;
+      const profileName = Array.isArray(t.profiles) ? t.profiles[0]?.full_name : (t.profiles as any)?.full_name;
       return {
         teacher_id: t.id,
-        name: (t.profiles as any)?.full_name || t.name,
+        name: profileName || 'Unknown Teacher',
         subject: t.subject_specialization,
         status: t.status,
         record_id: record?.id || null,
