@@ -144,6 +144,51 @@ export default function AdminAttendance() {
 
   const presentCount = gridRows.filter((s) => s.present).length;
 
+  const toggleAttendanceStatus = async (employeeId: string, currentStatus: boolean) => {
+    try {
+      const newStatus = currentStatus ? 'absent' : 'present';
+      
+      // Optimistic UI update
+      setAttendanceRecords(prev => {
+        const existing = prev.find(r => r.employee_id === employeeId);
+        if (existing) {
+          return prev.map(r => r.employee_id === employeeId ? { ...r, status: newStatus } : r);
+        }
+        // If they didn't exist yet, we add a mock one for optimistic update
+        return [...prev, {
+          id: crypto.randomUUID(), // Temp ID
+          employee_id: employeeId,
+          date,
+          status: newStatus,
+          check_in: null,
+          check_out: null,
+          notes: null
+        }];
+      });
+
+      // Find the real record ID if it exists
+      const existingRecord = attendanceRecords.find(r => r.employee_id === employeeId);
+      
+      await attendanceService.upsertAttendance({
+        id: existingRecord?.id,
+        employee_id: employeeId,
+        date,
+        status: newStatus,
+      });
+
+      // Refetch to get actual IDs and sync
+      const newRecs = await attendanceService.getAttendanceByDate(date);
+      setAttendanceRecords(newRecs);
+      
+      toast.success(`Marked as ${newStatus}`);
+    } catch (err: any) {
+      toast.error(err.message);
+      // Revert on error by refetching
+      const newRecs = await attendanceService.getAttendanceByDate(date);
+      setAttendanceRecords(newRecs);
+    }
+  };
+
   const handleLockConfiguration = async () => {
     try {
       setSaving(true);
@@ -253,9 +298,13 @@ export default function AdminAttendance() {
                       <td className="px-5 py-4 font-mono text-xs">{row.timeOut}</td>
                       <td className="px-5 py-4 font-mono text-xs text-muted-foreground">{row.ip}</td>
                       <td className="px-5 py-4">
-                        <span className={`text-[10px] font-bold px-2 py-1 ${row.present ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}>
+                        <button 
+                          onClick={() => toggleAttendanceStatus(row.id, row.present)}
+                          disabled={saving || loading}
+                          className={`text-[10px] font-bold px-2 py-1 transition-colors ${row.present ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200" : "bg-rose-100 text-rose-700 hover:bg-rose-200"}`}
+                        >
                           {row.present ? "VERIFIED" : "FAILED"}
-                        </span>
+                        </button>
                       </td>
                       <td className="px-5 py-4 text-xs font-bold text-muted-foreground">{row.present ? "PASS" : "REVIEW"}</td>
                     </tr>
