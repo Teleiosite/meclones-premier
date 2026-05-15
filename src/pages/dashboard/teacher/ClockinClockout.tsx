@@ -1,10 +1,18 @@
 import { useMemo, useState, useEffect } from "react";
 import { CalendarDays, LogIn, LogOut, CheckCircle2, Clock3, TriangleAlert } from "lucide-react";
+import { toast } from "sonner";
+import { attendanceService, AttendanceRecord } from "../../../services/attendanceService";
+import { employeeService, Employee } from "../../../services/employeeService";
+import { supabaseClient } from "../../../lib/supabaseClient";
 
 export default function ClockinClockout() {
   const [now, setNow] = useState(new Date());
-  const [checkIn, setCheckIn] = useState<string | null>(null);
-  const [checkOut, setCheckOut] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [selectedEmployee, setSelectedEmployee] = useState<string>("");
+  const [todayRecord, setTodayRecord] = useState<AttendanceRecord | null>(null);
+  const [history, setHistory] = useState<AttendanceRecord[]>([]);
 
   // Update clock every second
   useEffect(() => {
@@ -22,12 +30,126 @@ export default function ClockinClockout() {
     [now]
   );
 
+  const todayStr = now.toISOString().split("T")[0];
+
+  useEffect(() => {
+    const loadInitData = async () => {
+      try {
+        setLoading(true);
+        const emps = await employeeService.getEmployees();
+        setEmployees(emps);
+        if (emps.length > 0) {
+          // Default to first employee for demonstration (in real app, use auth.uid())
+          setSelectedEmployee(emps[0].id);
+        }
+      } catch (err: any) {
+        toast.error(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadInitData();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedEmployee) return;
+
+    const loadRecords = async () => {
+      try {
+        const past30Days = new Date();
+        past30Days.setDate(past30Days.getDate() - 30);
+        
+        const records = await attendanceService.getAttendanceRange(
+          past30Days.toISOString().split("T")[0], 
+          todayStr, 
+          selectedEmployee
+        );
+        
+        const todayRec = records.find(r => r.date === todayStr) || null;
+        setTodayRecord(todayRec);
+        setHistory(records.filter(r => r.date !== todayStr).slice(0, 10)); // up to 10 historical records
+      } catch (err: any) {
+        toast.error(err.message);
+      }
+    };
+    loadRecords();
+
+    // Set up realtime subscription
+    const channel = supabaseClient
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'unified_attendance',
+          filter: `employee_id=eq.${selectedEmployee}`
+        },
+        (payload) => {
+          loadRecords(); // Refresh on any change
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabaseClient.removeChannel(channel);
+    };
+  }, [selectedEmployee, todayStr]);
+
+  const checkIn = todayRecord?.check_in ? new Date(todayRecord.check_in).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : null;
+  const checkOut = todayRecord?.check_out ? new Date(todayRecord.check_out).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : null;
+
+  const handleSignIn = async () => {
+    if (!selectedEmployee) return;
+    try {
+      setSaving(true);
+      await attendanceService.upsertAttendance({
+        id: todayRecord?.id,
+        employee_id: selectedEmployee,
+        date: todayStr,
+        status: "present",
+        check_in: new Date().toISOString()
+      });
+      toast.success("Successfully signed in.");
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    if (!selectedEmployee || !todayRecord?.check_in) return;
+    try {
+      setSaving(true);
+      await attendanceService.upsertAttendance({
+        ...todayRecord,
+        check_out: new Date().toISOString()
+      });
+      toast.success("Successfully signed out.");
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="font-display text-3xl font-black text-navy">My Attendance</h1>
-        <p className="text-muted-foreground text-sm mt-1">Track your daily check-ins and working hours.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-display text-3xl font-black text-navy">My Attendance</h1>
+          <p className="text-muted-foreground text-sm mt-1">Track your daily check-ins and working hours.</p>
+        </div>
+        <select 
+          value={selectedEmployee} 
+          onChange={e => setSelectedEmployee(e.target.value)}
+          className="border border-border bg-white px-3 py-2 text-sm text-navy focus:outline-none focus:border-navy"
+          disabled={loading}
+        >
+          {loading ? <option>Loading...</option> : employees.map(e => <option key={e.id} value={e.id}>{e.full_name} ({e.department})</option>)}
+        </select>
       </div>
 
       {/* Clock-in card */}
@@ -51,20 +173,20 @@ export default function ClockinClockout() {
 
         <div className="space-y-3 min-w-[160px]">
           <button 
-            onClick={() => setCheckIn(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }))} 
-            disabled={!!checkIn}
-            className={`w-full flex items-center justify-center gap-2 px-4 py-3 text-xs font-bold tracking-wider transition uppercase ${!checkIn ? "bg-navy text-gold hover:bg-navy/90" : "bg-secondary text-muted-foreground border border-border cursor-not-allowed"}`}
+            onClick={handleSignIn}
+            disabled={!!checkIn || saving}
+            className={`w-full flex items-center justify-center gap-2 px-4 py-3 text-xs font-bold tracking-wider transition uppercase ${!checkIn && !saving ? "bg-navy text-gold hover:bg-navy/90" : "bg-secondary text-muted-foreground border border-border cursor-not-allowed"}`}
           >
             <LogIn size={14} />
-            Sign In
+            {saving && !checkIn ? "WAIT..." : "SIGN IN"}
           </button>
           <button 
-            onClick={() => setCheckOut(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }))} 
-            disabled={!checkIn || !!checkOut}
-            className={`w-full flex items-center justify-center gap-2 px-4 py-3 text-xs font-bold tracking-wider transition uppercase ${checkIn && !checkOut ? "border border-navy text-navy hover:bg-navy hover:text-gold" : "bg-secondary border border-border text-muted-foreground cursor-not-allowed"}`}
+            onClick={handleSignOut}
+            disabled={!checkIn || !!checkOut || saving}
+            className={`w-full flex items-center justify-center gap-2 px-4 py-3 text-xs font-bold tracking-wider transition uppercase ${checkIn && !checkOut && !saving ? "border border-navy text-navy hover:bg-navy hover:text-gold" : "bg-secondary border border-border text-muted-foreground cursor-not-allowed"}`}
           >
             <LogOut size={14} />
-            Sign Out
+            {saving && checkIn && !checkOut ? "WAIT..." : "SIGN OUT"}
           </button>
         </div>
       </div>
@@ -102,12 +224,22 @@ export default function ClockinClockout() {
               </tr>
             </thead>
             <tbody className="text-navy divide-y divide-border">
-              {/* No records placeholder */}
-              <tr>
-                <td colSpan={4} className="py-16 text-center text-muted-foreground text-sm">
-                  No attendance records yet.
-                </td>
-              </tr>
+              {history.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="py-16 text-center text-muted-foreground text-sm">
+                    No attendance records yet.
+                  </td>
+                </tr>
+              ) : (
+                history.map(r => (
+                  <tr key={r.id} className="hover:bg-secondary/20 transition">
+                    <td className="px-5 py-4 font-semibold text-navy">{r.date}</td>
+                    <td className="px-5 py-4 font-mono text-xs">{r.check_in ? new Date(r.check_in).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : "—"}</td>
+                    <td className="px-5 py-4 font-mono text-xs">{r.check_out ? new Date(r.check_out).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : "—"}</td>
+                    <td className="px-5 py-4 text-xs font-bold uppercase">{r.status}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
