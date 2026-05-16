@@ -26,6 +26,7 @@ export default function AdminAdmissions() {
   const [loading, setLoading]   = useState(true);
   const [filter, setFilter]     = useState("All");
   const [viewing, setViewing]   = useState<Application | null>(null);
+  const [showInvite, setShowInvite] = useState<{ name: string; link: string; email: string } | null>(null);
   const [updating, setUpdating] = useState<string | null>(null);
 
   const fetchApplications = useCallback(async () => {
@@ -44,40 +45,34 @@ export default function AdminAdmissions() {
 
   const updateStatus = async (id: string, status: "Approved" | "Rejected") => {
     setUpdating(id);
+    const app = applications.find(a => a.id === id);
     
     try {
-      if (status === "Approved") {
-        // Call the secure RPC for Parent + Student orchestration
-        const { data, error } = await supabase.rpc("manage_user", {
-          p_action: "approve_admission",
-          p_admission_id: id
-        });
+      // 1. Update the admission record status
+      const { error } = await supabase
+        .from("admissions")
+        .update({ status })
+        .eq("id", id);
+      
+      if (error) throw error;
 
-        if (error) throw error;
-        if (data?.status === "error") throw new Error(data.message);
-
-        toast.success("Admission approved. Accounts created for student and parent.");
+      if (status === "Approved" && app) {
+        // 2. Generate the invite link for the parent
+        const regLink = `${window.location.origin}/register?email=${encodeURIComponent(app.parent_email)}&role=parent&name=${encodeURIComponent(app.parent_name)}`;
+        setShowInvite({ name: app.parent_name, link: regLink, email: app.parent_email });
+        toast.success("Admission approved! Invite link generated.");
       } else {
-        // Just update the status for Rejections
-        const { error } = await supabase
-          .from("admissions")
-          .update({ status })
-          .eq("id", id);
-        
-        if (error) throw error;
-        toast.success("Application rejected.");
+        toast.success(`Application ${status.toLowerCase()}.`);
       }
 
       setApplications(prev => prev.map(a => a.id === id ? { ...a, status } : a));
       if (viewing?.id === id) setViewing(v => v ? { ...v, status } : null);
     } catch (err: any) {
-      console.error("Admission update error:", err);
-      toast.error(err.message || "Failed to update admission status.");
+      toast.error(err.message || "Failed to update status.");
     } finally {
       setUpdating(null);
     }
   };
-
 
 
   const counts = {
@@ -214,6 +209,52 @@ export default function AdminAdmissions() {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+      {/* Invite Modal */}
+      {showInvite && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowInvite(null)}>
+          <div onClick={(e) => e.stopPropagation()} className="bg-white p-8 w-full max-w-md space-y-6 shadow-2xl text-center">
+            <div className="w-16 h-16 bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto rounded-full">
+              <CheckCircle2 size={32} />
+            </div>
+            <div>
+              <h3 className="font-display text-2xl font-black text-navy uppercase">Admission Approved</h3>
+              <p className="text-sm text-muted-foreground mt-2">Send this registration link to {showInvite.name} to complete their enrollment.</p>
+            </div>
+            
+            <div className="bg-secondary/50 p-4 rounded border border-dashed border-border text-xs font-mono break-all text-navy/70 select-all">
+              {showInvite.link}
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <button 
+                onClick={() => {
+                  navigator.clipboard.writeText(showInvite.link);
+                  toast.success("Link copied!");
+                }}
+                className="bg-navy text-gold py-3 text-xs font-bold tracking-widest hover:bg-navy/90 transition"
+              >
+                COPY LINK
+              </button>
+              <button 
+                onClick={() => {
+                  const subject = encodeURIComponent("Welcome to Meclones Academy - Enrollment Approved");
+                  const body = encodeURIComponent(`Hello ${showInvite.name},\n\nYour admission application has been APPROVED. Please use the link below to set up your parent account and link your child:\n\n${showInvite.link}\n\nRegards,\nMeclones Academy Admissions`);
+                  window.location.href = `mailto:${showInvite.email}?subject=${subject}&body=${body}`;
+                }}
+                className="border border-navy text-navy py-3 text-xs font-bold tracking-widest hover:bg-secondary transition"
+              >
+                SEND EMAIL
+              </button>
+            </div>
+            <button 
+              onClick={() => setShowInvite(null)}
+              className="text-xs font-bold text-muted-foreground hover:text-navy transition"
+            >
+              CLOSE
+            </button>
           </div>
         </div>
       )}

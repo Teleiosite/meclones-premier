@@ -20,10 +20,11 @@ export default function AdminTeachers() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("All");
   const [showAdd, setShowAdd] = useState(false);
+  const [showInvite, setShowInvite] = useState<{ name: string; link: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [viewing, setViewing] = useState<Teacher | null>(null);
   const [form, setForm] = useState({
-    full_name: "", email: "", password: "", subject_specialization: "", qualification: "", employee_id: "",
+    full_name: "", email: "", subject_specialization: "", qualification: "", employee_id: "",
   });
 
   const fetchTeachers = useCallback(async () => {
@@ -37,7 +38,7 @@ export default function AdminTeachers() {
         qualification,
         status,
         profile_id,
-        profiles!teachers_profile_id_fkey ( full_name, email )
+        profiles ( full_name, email )
       `)
       .order("created_at", { ascending: false });
 
@@ -51,7 +52,7 @@ export default function AdminTeachers() {
       id: t.id,
       employee_id: t.employee_id ?? "—",
       full_name: t.profiles?.full_name ?? "—",
-      email: t.profiles?.email ?? "—",
+      email: (t.profiles as any)?.email ?? "—",
       subject_specialization: t.subject_specialization ?? "—",
       qualification: t.qualification ?? "—",
       status: t.status ?? "Active",
@@ -82,41 +83,33 @@ export default function AdminTeachers() {
     toast.success(`Exported ${filtered.length} teachers.`);
   };
 
-  const addTeacher = async (e: React.FormEvent) => {
+  const handleAddTeacher = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.email || !form.password) {
-      toast.error("Email and password are required.");
-      return;
-    }
     setSaving(true);
 
-    try {
-      // Call the secure RPC instead of an Edge Function
-      const { data, error } = await supabase.rpc("manage_user", {
-        p_action: "create",
-        p_email: form.email,
-        p_password: form.password,
-        p_role: "teacher",
-        p_metadata: {
-          full_name: form.full_name,
-          employee_id: form.employee_id || `T-${Date.now()}`,
-          subject_specialization: form.subject_specialization,
-          qualification: form.qualification
-        }
-      });
+    // We don't create the user here to avoid email/login issues.
+    // Instead, we generate a specialized registration link.
+    const regLink = `${window.location.origin}/register?email=${encodeURIComponent(form.email)}&role=teacher&name=${encodeURIComponent(form.full_name)}`;
+    
+    setShowInvite({ name: form.full_name, link: regLink });
+    setShowAdd(false);
+    setSaving(false);
+    
+    toast.success("Invitation link generated!");
+  };
 
-      if (error) throw error;
-      if (data?.status === "error") throw new Error(data.message);
+  const copyInvite = () => {
+    if (showInvite) {
+      navigator.clipboard.writeText(showInvite.link);
+      toast.success("Link copied to clipboard!");
+    }
+  };
 
-      toast.success(`${form.full_name} added successfully with access.`);
-      setForm({ full_name: "", email: "", password: "", subject_specialization: "", qualification: "", employee_id: "" });
-      setShowAdd(false);
-      fetchTeachers();
-    } catch (err: any) {
-      console.error("Teacher creation error:", err);
-      toast.error(err.message || "Failed to create teacher account.");
-    } finally {
-      setSaving(false);
+  const sendEmail = () => {
+    if (showInvite) {
+      const subject = encodeURIComponent("Invitation to join Meclones Academy Portal");
+      const body = encodeURIComponent(`Hello ${showInvite.name},\n\nYou have been invited to join the Meclones Academy portal as a Teacher. Please use the link below to set up your account:\n\n${showInvite.link}\n\nRegards,\nSchool Administration`);
+      window.location.href = `mailto:${form.email}?subject=${subject}&body=${body}`;
     }
   };
 
@@ -224,36 +217,79 @@ export default function AdminTeachers() {
       {/* Add Modal */}
       {showAdd && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowAdd(false)}>
-          <form onSubmit={addTeacher} onClick={(e) => e.stopPropagation()} className="bg-white p-6 w-full max-w-md space-y-4">
+          <form onSubmit={handleAddTeacher} onClick={(e) => e.stopPropagation()} className="bg-white p-8 w-full max-w-md space-y-6 shadow-2xl">
             <div className="flex items-center justify-between">
-              <h3 className="font-display text-xl font-black text-navy">Add Teacher</h3>
-              <button type="button" onClick={() => setShowAdd(false)}><X size={18} /></button>
+              <h3 className="font-display text-2xl font-black text-navy uppercase">Invite Teacher</h3>
+              <button type="button" onClick={() => setShowAdd(false)}><X size={20} /></button>
             </div>
-            <input required placeholder="Full name" value={form.full_name}
-              onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-              className="w-full border border-border px-3 py-2 text-sm" />
-            <input required type="email" placeholder="Email address" value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className="w-full border border-border px-3 py-2 text-sm" />
-            <input required type="password" placeholder="Initial password" value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              className="w-full border border-border px-3 py-2 text-sm" />
-            <input required placeholder="Subject / specialization" value={form.subject_specialization}
-              onChange={(e) => setForm({ ...form, subject_specialization: e.target.value })}
-              className="w-full border border-border px-3 py-2 text-sm" />
+            <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Account Details</p>
+            <div className="space-y-4">
+              <input required placeholder="Full name" value={form.full_name}
+                onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+                className="w-full border border-border px-4 py-3 text-sm focus:border-navy outline-none" />
+              <input required type="email" placeholder="Email address" value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                className="w-full border border-border px-4 py-3 text-sm focus:border-navy outline-none" />
+            </div>
+            
+            <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Professional Details</p>
+            <div className="space-y-4">
+              <input required placeholder="Subject / specialization" value={form.subject_specialization}
+                onChange={(e) => setForm({ ...form, subject_specialization: e.target.value })}
+                className="w-full border border-border px-4 py-3 text-sm focus:border-navy outline-none" />
+              <input placeholder="Qualification (e.g. B.Ed, M.Sc)" value={form.qualification}
+                onChange={(e) => setForm({ ...form, qualification: e.target.value })}
+                className="w-full border border-border px-4 py-3 text-sm focus:border-navy outline-none" />
+              <input placeholder="Employee ID (optional)" value={form.employee_id}
+                onChange={(e) => setForm({ ...form, employee_id: e.target.value })}
+                className="w-full border border-border px-4 py-3 text-sm font-mono focus:border-navy outline-none" />
+            </div>
 
-            <input placeholder="Qualification (e.g. B.Ed, M.Sc)" value={form.qualification}
-              onChange={(e) => setForm({ ...form, qualification: e.target.value })}
-              className="w-full border border-border px-3 py-2 text-sm" />
-            <input placeholder="Employee ID (optional)" value={form.employee_id}
-              onChange={(e) => setForm({ ...form, employee_id: e.target.value })}
-              className="w-full border border-border px-3 py-2 text-sm font-mono" />
             <button type="submit" disabled={saving}
-              className="w-full bg-navy text-gold py-3 font-bold text-xs tracking-wider disabled:opacity-60 flex items-center justify-center gap-2">
-              {saving && <Loader2 size={14} className="animate-spin" />}
-              {saving ? "SAVING..." : "SAVE TEACHER"}
+              className="w-full bg-navy text-gold py-4 font-bold text-xs tracking-widest hover:bg-navy/90 transition disabled:opacity-60 flex items-center justify-center gap-2">
+              {saving ? <Loader2 size={16} className="animate-spin" /> : "GENERATE INVITE LINK →"}
             </button>
           </form>
+        </div>
+      )}
+
+      {/* Invite Modal */}
+      {showInvite && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowInvite(null)}>
+          <div onClick={(e) => e.stopPropagation()} className="bg-white p-8 w-full max-w-md space-y-6 shadow-2xl text-center">
+            <div className="w-16 h-16 bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto rounded-full">
+              <Plus size={32} />
+            </div>
+            <div>
+              <h3 className="font-display text-2xl font-black text-navy uppercase">Invite Generated</h3>
+              <p className="text-sm text-muted-foreground mt-2">Send this link to {showInvite.name} to complete their registration.</p>
+            </div>
+            
+            <div className="bg-secondary/50 p-4 rounded border border-dashed border-border text-xs font-mono break-all text-navy/70 select-all">
+              {showInvite.link}
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <button 
+                onClick={copyInvite}
+                className="bg-navy text-gold py-3 text-xs font-bold tracking-widest hover:bg-navy/90 transition"
+              >
+                COPY LINK
+              </button>
+              <button 
+                onClick={sendEmail}
+                className="border border-navy text-navy py-3 text-xs font-bold tracking-widest hover:bg-secondary transition"
+              >
+                SEND EMAIL
+              </button>
+            </div>
+            <button 
+              onClick={() => setShowInvite(null)}
+              className="text-xs font-bold text-muted-foreground hover:text-navy transition"
+            >
+              CLOSE
+            </button>
+          </div>
         </div>
       )}
 

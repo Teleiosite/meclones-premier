@@ -41,16 +41,21 @@ export default function Login() {
       return;
     }
 
-    // RBAC source of truth: profiles.role. Do not trust mutable user_metadata
-    // and do not bootstrap privileged roles from the frontend.
+    // Use maybeSingle() to avoid throwing an exception if no row is found
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("role")
       .eq("id", data.user.id)
-      .single();
+      .maybeSingle();
 
     if (profileError) {
-      setError("Unable to load your access profile. Please contact the administrator.");
+      setError("Database error: " + profileError.message);
+      setLoading(false);
+      return;
+    }
+
+    if (!profile) {
+      setError("Your account was created, but your profile is missing. Please contact support.");
       setLoading(false);
       return;
     }

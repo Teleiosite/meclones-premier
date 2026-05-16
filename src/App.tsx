@@ -15,6 +15,7 @@ import Fees from "./pages/Fees";
 import News from "./pages/News";
 import Contact from "./pages/Contact";
 import Login from "./pages/auth/Login";
+import Register from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
 import AdminLayout, { AdminDashboard } from "./pages/dashboard/AdminDashboard";
@@ -91,6 +92,7 @@ const App = () => (
             </Route>
 
             {/* Auth */}
+            <Route path="/register" element={<Register />} />
             <Route path="/login" element={<Login />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
