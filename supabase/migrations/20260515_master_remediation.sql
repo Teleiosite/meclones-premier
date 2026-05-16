@@ -12,20 +12,34 @@ ALTER TABLE public.parents ADD COLUMN IF NOT EXISTS address TEXT;
 ALTER TABLE public.parents ADD COLUMN IF NOT EXISTS occupation TEXT;
 ALTER TABLE public.parents ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'Active';
 
+-- Basic Status Columns
 ALTER TABLE public.students ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'Active';
 ALTER TABLE public.students ADD COLUMN IF NOT EXISTS class_id UUID REFERENCES public.classes(id);
 ALTER TABLE public.teachers ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'Active';
 
+-- Timetable Cleanup and Sync
+ALTER TABLE public.timetable DROP CONSTRAINT IF EXISTS timetable_day_check;
+ALTER TABLE public.timetable DROP CONSTRAINT IF EXISTS timetable_period_check;
+ALTER TABLE public.timetable ALTER COLUMN "class" DROP NOT NULL;
+ALTER TABLE public.timetable ALTER COLUMN "period" DROP NOT NULL;
 
+-- Teacher Profile Link
+ALTER TABLE public.teachers ADD CONSTRAINT teachers_profile_id_unique UNIQUE (profile_id);
+
+-- Timetable Columns
 ALTER TABLE public.timetable ADD COLUMN IF NOT EXISTS time_slot TEXT;
 ALTER TABLE public.timetable ADD COLUMN IF NOT EXISTS display_time TEXT;
 ALTER TABLE public.timetable ADD COLUMN IF NOT EXISTS day TEXT;
-
 ALTER TABLE public.timetable ADD COLUMN IF NOT EXISTS subject TEXT;
 ALTER TABLE public.timetable ADD COLUMN IF NOT EXISTS room TEXT;
 ALTER TABLE public.timetable ADD COLUMN IF NOT EXISTS color TEXT DEFAULT 'bg-navy';
-ALTER TABLE public.timetable ADD COLUMN IF NOT EXISTS teacher_id UUID REFERENCES public.teachers(profile_id);
+ALTER TABLE public.timetable ADD COLUMN IF NOT EXISTS teacher_id UUID;
 ALTER TABLE public.timetable ADD COLUMN IF NOT EXISTS class_name TEXT;
+
+-- Final Foreign Key
+ALTER TABLE public.timetable DROP CONSTRAINT IF EXISTS timetable_teacher_id_fkey;
+ALTER TABLE public.timetable ADD CONSTRAINT timetable_teacher_id_fkey FOREIGN KEY (teacher_id) REFERENCES public.teachers(profile_id) ON DELETE SET NULL;
+
 
 
 ALTER TABLE public.payments ADD COLUMN IF NOT EXISTS term TEXT;
@@ -129,6 +143,7 @@ SET search_path = public, auth, extensions
 AS $func$
 DECLARE
   v_user_id UUID;
+  v_now TIMESTAMPTZ := NOW();
 BEGIN
   -- Security check
   IF (auth.jwt() -> 'user_metadata' ->> 'role') != 'admin' THEN
@@ -138,13 +153,42 @@ BEGIN
   IF p_action = 'create' THEN
     v_user_id := extensions.gen_random_uuid();
 
-    -- Create Auth User
-    INSERT INTO auth.users (id, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, role, aud)
-    VALUES (v_user_id, p_email, extensions.crypt(p_password, extensions.gen_salt('bf')), NULL, '{"provider":"email"}', jsonb_build_object('role', p_role, 'full_name', p_metadata->>'full_name'), 'authenticated', 'authenticated');
+    -- Create Auth User with confirmed email and correct metadata
+    INSERT INTO auth.users (
+      id, 
+      instance_id,
+      email, 
+      encrypted_password, 
+      email_confirmed_at, 
+      raw_app_meta_data, 
+      raw_user_meta_data, 
+      role, 
+      aud,
+      created_at,
+      updated_at,
+      confirmation_token,
+      recovery_token,
+      email_change_token_new,
+      is_super_admin
+    )
+    VALUES (
+      v_user_id, 
+      '00000000-0000-0000-0000-000000000000',
+      p_email, 
+      extensions.crypt(p_password, extensions.gen_salt('bf')), 
+      v_now, 
+      '{"provider":"email","providers":["email"]}', 
+      jsonb_build_object('role', p_role, 'full_name', p_metadata->>'full_name'), 
+      'authenticated', 
+      'authenticated',
+      v_now,
+      v_now,
+      '', '', '', false
+    );
 
     -- Create Public Profile
-    INSERT INTO public.profiles (id, role, email, full_name) 
-    VALUES (v_user_id, p_role, p_email, p_metadata->>'full_name');
+    INSERT INTO public.profiles (id, role, email, full_name, created_at, updated_at) 
+    VALUES (v_user_id, p_role, p_email, p_metadata->>'full_name', v_now, v_now);
 
     -- Role Specific Logic
     IF p_role = 'teacher' THEN
@@ -166,6 +210,7 @@ BEGIN
   RETURN jsonb_build_object('status', 'error', 'message', 'Invalid action');
 END;
 $func$;
+
 
 -- 5. Financial Stats RPC
 CREATE OR REPLACE FUNCTION get_fee_stats()
