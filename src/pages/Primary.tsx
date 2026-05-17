@@ -1,6 +1,6 @@
 import PageHero from "@/components/site/PageHero";
 import CTABanner from "@/components/site/CTABanner";
-import primaryImg from "@/assets/primary.jpg";
+import primaryImg from "@/assets/primary School 4.jpeg";
 import classroomImg from "@/assets/classroom.jpg";
 import campusImg from "@/assets/campus.jpg";
 import gradImg from "@/assets/graduation.jpg";
