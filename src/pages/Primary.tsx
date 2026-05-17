@@ -2,11 +2,13 @@ import PageHero from "@/components/site/PageHero";
 import CTABanner from "@/components/site/CTABanner";
 import primaryImg from "@/assets/primary School 4.jpeg";
 import classroomImg from "@/assets/classroom.jpg";
-import beyondImg from "@/assets/meclones-images2.jpg";
-import campusImg from "@/assets/campus.jpg";
-import gradImg from "@/assets/graduation.jpg";
-import secondaryImg from "@/assets/secondary.jpg";
-import heroImg from "@/assets/hero-students.jpg";
+import beyondImg from "@/assets/about-us.jpg";
+import gal1 from "@/assets/Gallary 10.jpeg";
+import gal2 from "@/assets/teacher 1.jpg";
+import gal3 from "@/assets/Primary school building.jpeg";
+import gal4 from "@/assets/primary School 6.jpeg";
+import gal5 from "@/assets/teacher 2.jpg";
+import gal6 from "@/assets/primary School 5.jpeg";
 import { Heart, Palette, Music, Trophy } from "lucide-react";
 
 const programmes = [
@@ -125,12 +127,12 @@ export default function Primary() {
           <h2 className="display text-4xl text-navy mb-10">A day at Primary Meclones.</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {[
-              { src: classroomImg, label: "Learning in action" },
-              { src: primaryImg, label: "Outdoor play" },
-              { src: campusImg, label: "Our beautiful campus" },
-              { src: heroImg, label: "Focused learners" },
-              { src: gradImg, label: "Prize giving day" },
-              { src: secondaryImg, label: "School community" },
+              { src: gal1, label: "Learning in action" },
+              { src: gal2, label: "Outdoor play" },
+              { src: gal3, label: "Our beautiful campus" },
+              { src: gal4, label: "Focused learners" },
+              { src: gal5, label: "Prize giving day" },
+              { src: gal6, label: "School community" },
             ].map((img, i) => (
               <div key={i} className="aspect-square overflow-hidden group relative">
                 <img
