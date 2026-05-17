@@ -1,9 +1,11 @@
 import PageHero from "@/components/site/PageHero";
 import CTABanner from "@/components/site/CTABanner";
-import classroomImg from "@/assets/classroom.jpg";
-import gradImg from "@/assets/graduation.jpg";
-import primaryImg from "@/assets/primary.jpg";
-import secondaryImg from "@/assets/secondary.jpg";
+import art1 from "@/assets/Gallary 12.jpeg";
+import art2 from "@/assets/Secondary School 2.jpeg";
+import art3 from "@/assets/Gallary 1.jpeg";
+import art4 from "@/assets/Gallary 5.jpeg";
+import art5 from "@/assets/primary School 4.jpeg";
+import art6 from "@/assets/primary School 1.jpeg";
 import campusImg from "@/assets/Primary school logo.jpeg";
 import featuredImg from "@/assets/slider-meclones-2.jpg";
 import { ArrowRight } from "lucide-react";
@@ -15,12 +17,12 @@ const featured = {
 };
 
 const articles = [
-  { img: primaryImg, tag: "EVENTS", date: "OCT 2025", title: "Primary Annual Sports Day brings whole campus together" },
-  { img: secondaryImg, tag: "ACADEMIC", date: "SEP 2025", title: "Senior students take national maths olympiad gold" },
-  { img: campusImg, tag: "CAMPUS", date: "AUG 2025", title: "New science block opens for the 2025/26 session" },
-  { img: classroomImg, tag: "TEACHING", date: "JUL 2025", title: "Inside our new phonics-first early reading programme" },
-  { img: gradImg, tag: "ALUMNI", date: "JUN 2025", title: "Three Meclones alumni admitted to Ivy League schools" },
-  { img: primaryImg, tag: "ARTS", date: "MAY 2025", title: "Annual school musical wraps after sold-out run" },
+  { img: art1, tag: "EVENTS", date: "OCT 2025", title: "Primary Annual Sports Day brings whole campus together" },
+  { img: art2, tag: "ACADEMIC", date: "SEP 2025", title: "Senior students take national maths olympiad gold" },
+  { img: art3, tag: "CAMPUS", date: "AUG 2025", title: "New science block opens for the 2025/26 session" },
+  { img: art4, tag: "TEACHING", date: "JUL 2025", title: "Inside our new phonics-first early reading programme" },
+  { img: art5, tag: "ALUMNI", date: "JUN 2025", title: "Three Meclones alumni admitted to Ivy League schools" },
+  { img: art6, tag: "ARTS", date: "MAY 2025", title: "Annual school musical wraps after sold-out run" },
 ];
 
 export default function News() {
