@@ -21,7 +21,7 @@ const articles = [
   { img: art2, tag: "ACADEMIC", date: "SEP 2025", title: "Senior students engaged in interactive, modern learning" },
   { img: art3, tag: "CULTURE", date: "AUG 2025", title: "Celebrating our rich heritage and diversity during Cultural Day", imgClass: "object-top" },
   { img: art4, tag: "ARTS", date: "JUL 2025", title: "Nurturing creativity and self-expression in extracurriculars" },
-  { img: art5, tag: "TEACHING", date: "JUN 2025", title: "Hands-on discovery and joy in our primary classrooms" },
+  { img: art5, tag: "EXCURSION", date: "JUN 2025", title: "Primary students enjoy real-life learning on airport excursion" },
   { img: art6, tag: "EARLY YEARS", date: "MAY 2025", title: "A welcoming and joyful start for our youngest learners" },
 ];
 
