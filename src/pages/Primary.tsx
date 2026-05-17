@@ -3,7 +3,7 @@ import CTABanner from "@/components/site/CTABanner";
 import primaryImg from "@/assets/primary School 4.jpeg";
 import classroomImg from "@/assets/classroom.jpg";
 import beyondImg from "@/assets/about-us.jpg";
-import gal1 from "@/assets/Gallary 10.jpeg";
+import gal1 from "@/assets/Gallary 3.jpeg";
 import gal2 from "@/assets/teacher 1.jpg";
 import gal3 from "@/assets/Primary school building.jpeg";
 import gal4 from "@/assets/primary School 6.jpeg";
