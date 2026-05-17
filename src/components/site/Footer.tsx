@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
 import { Mail, Phone, MapPin } from "lucide-react";
+import logoImg from "@/assets/logo.png";
+
 
 export default function Footer() {
   return (
@@ -7,7 +9,7 @@ export default function Footer() {
       <div className="container-page py-16 grid md:grid-cols-4 gap-10">
         <div>
           <div className="flex items-center gap-2.5 mb-4">
-            <div className="w-8 h-8 bg-gold flex items-center justify-center text-navy font-black text-sm">M</div>
+            <img src={logoImg} alt="Meclones Group of Schools" className="w-8 h-8 object-contain" />
             <span className="font-bold tracking-wide text-sm">MECLONES GROUP OF SCHOOLS</span>
           </div>
           <p className="text-white/60 text-sm leading-relaxed">

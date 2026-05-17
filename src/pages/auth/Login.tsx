@@ -2,6 +2,8 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { Lock, Mail, ShieldCheck, AlertCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import logoImg from "@/assets/logo.png";
+
 
 const ROLE_PATHS: Record<string, string> = {
   admin:   "/dashboard/admin",
@@ -79,7 +81,7 @@ export default function Login() {
       <div className="hidden lg:flex flex-col justify-between bg-navy text-white p-12 relative overflow-hidden">
         <div className="absolute -right-24 -top-24 w-96 h-96 rounded-full bg-gold/10 blur-3xl" />
         <Link to="/" className="flex items-center gap-3 relative">
-          <div className="w-10 h-10 bg-gold flex items-center justify-center text-navy font-black">M</div>
+          <img src={logoImg} alt="Meclones Group of Schools" className="w-10 h-10 object-contain" />
           <span className="font-bold tracking-wide">MECLONES GROUP OF SCHOOLS</span>
         </Link>
         <div className="relative">
@@ -99,7 +101,7 @@ export default function Login() {
       <div className="flex items-center justify-center p-6 sm:p-12">
         <div className="w-full max-w-md">
           <div className="lg:hidden mb-8 flex items-center gap-2.5">
-            <div className="w-9 h-9 bg-navy flex items-center justify-center text-gold font-black">M</div>
+            <img src={logoImg} alt="Meclones Group of Schools" className="w-9 h-9 object-contain" />
             <span className="font-bold tracking-wide text-navy">MECLONES GROUP OF SCHOOLS</span>
           </div>
 

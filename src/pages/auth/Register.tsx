@@ -3,6 +3,8 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Loader2, UserPlus, ShieldCheck, Mail } from "lucide-react";
+import logoImg from "@/assets/logo.png";
+
 
 export default function Register() {
   const navigate = useNavigate();
@@ -118,8 +120,8 @@ export default function Register() {
   return (
     <div className="min-h-screen bg-cream flex flex-col items-center justify-center p-4">
       <Link to="/" className="mb-8 group flex items-center gap-2">
-        <div className="w-10 h-10 bg-navy flex items-center justify-center text-gold font-display font-black text-xl">M</div>
-        <span className="font-display font-black text-2xl text-navy tracking-tighter">MECLONES</span>
+        <img src={logoImg} alt="Meclones Group of Schools" className="w-10 h-10 object-contain" />
+        <span className="font-display font-black text-2xl text-navy tracking-tighter">MECLONES GROUP OF SCHOOLS</span>
       </Link>
 
       <div className="w-full max-w-md bg-white border border-navy/10 p-8 md:p-10 shadow-xl">

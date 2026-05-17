@@ -2,6 +2,8 @@ import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useState, ReactNode } from "react";
 import { Bell, ChevronDown, LogOut, Menu, X } from "lucide-react";
 import CompleteProfileModal from "./CompleteProfileModal";
+import logoImg from "@/assets/logo.png";
+
 
 interface NavItem {
   to: string;
@@ -32,7 +34,7 @@ export default function DashboardLayout({ role, userName, userMeta, nav }: Props
       >
         <div className="p-6 border-b border-white/10">
           <Link to="/" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 bg-gold flex items-center justify-center text-navy font-black">M</div>
+            <img src={logoImg} alt="Meclones Group of Schools" className="w-9 h-9 object-contain" />
             <div>
               <div className="font-bold text-xs tracking-wide leading-tight">MECLONES GROUP OF SCHOOLS</div>
               <div className="text-[10px] text-white/50 tracking-widest uppercase">{role} portal</div>

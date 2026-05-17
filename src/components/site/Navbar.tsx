@@ -1,6 +1,8 @@
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
+import logoImg from "@/assets/logo.png";
+
 
 const links = [
   { to: "/", label: "Home" },
@@ -22,7 +24,7 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 bg-navy text-white border-b border-white/10">
       <div className="container-page flex items-center justify-between h-16">
         <Link to="/" className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-gold flex items-center justify-center text-navy font-black text-sm">M</div>
+          <img src={logoImg} alt="Meclones Group of Schools" className="w-8 h-8 object-contain" />
           <span className="font-bold tracking-wide text-sm">MECLONES GROUP OF SCHOOLS</span>
         </Link>
         <nav className="hidden lg:flex items-center gap-7">

@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
+import logoImg from "@/assets/logo.png";
+
 
 type UserRole = "admin" | "teacher" | "student" | "parent";
 
@@ -63,7 +65,7 @@ export default function AuthGuard() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-cream">
         <div className="text-center">
-          <div className="w-10 h-10 bg-navy flex items-center justify-center text-gold font-black text-lg mx-auto mb-3">M</div>
+          <img src={logoImg} alt="Meclones Group of Schools" className="w-10 h-10 object-contain mx-auto mb-3" />
           <p className="text-sm text-muted-foreground">Loading portal...</p>
         </div>
       </div>
