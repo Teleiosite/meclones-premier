@@ -4,7 +4,7 @@ import { ArrowRight, Award, BookOpen, Users, ShieldCheck } from "lucide-react";
 import heroImg from "@/assets/School Building 3.jpeg";
 import primaryImg from "@/assets/primary School 3.jpeg";
 import secondaryImg from "@/assets/slider-meclones-2.jpg";
-import gradImg from "@/assets/graduation.jpg";
+import gradImg from "@/assets/image5-scaled.jpg";
 import CTABanner from "@/components/site/CTABanner";
 
 const slides = [
