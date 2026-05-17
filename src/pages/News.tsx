@@ -17,12 +17,12 @@ const featured = {
 };
 
 const articles = [
-  { img: art1, tag: "EVENTS", date: "OCT 2025", title: "Primary Annual Sports Day brings whole campus together" },
-  { img: art2, tag: "ACADEMIC", date: "SEP 2025", title: "Senior students take national maths olympiad gold" },
-  { img: art3, tag: "CAMPUS", date: "AUG 2025", title: "New science block opens for the 2025/26 session" },
-  { img: art4, tag: "TEACHING", date: "JUL 2025", title: "Inside our new phonics-first early reading programme" },
-  { img: art5, tag: "ALUMNI", date: "JUN 2025", title: "Three Meclones alumni admitted to Ivy League schools" },
-  { img: art6, tag: "ARTS", date: "MAY 2025", title: "Annual school musical wraps after sold-out run" },
+  { img: art1, tag: "COMMUNITY", date: "OCT 2025", title: "Celebrating our vibrant school community and shared values" },
+  { img: art2, tag: "ACADEMIC", date: "SEP 2025", title: "Senior students engaged in interactive, modern learning" },
+  { img: art3, tag: "CAMPUS", date: "AUG 2025", title: "Fostering collaboration and teamwork across all year groups" },
+  { img: art4, tag: "ARTS", date: "JUL 2025", title: "Nurturing creativity and self-expression in extracurriculars" },
+  { img: art5, tag: "TEACHING", date: "JUN 2025", title: "Hands-on discovery and joy in our primary classrooms" },
+  { img: art6, tag: "EARLY YEARS", date: "MAY 2025", title: "A welcoming and joyful start for our youngest learners" },
 ];
 
 export default function News() {
