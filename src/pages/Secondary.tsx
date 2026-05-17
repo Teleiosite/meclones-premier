@@ -2,6 +2,12 @@ import PageHero from "@/components/site/PageHero";
 import CTABanner from "@/components/site/CTABanner";
 import secondaryImg from "@/assets/image3-scaled.jpg";
 import gradImg from "@/assets/image1-scaled.jpg";
+import secGal1 from "@/assets/Secondary School 1.jpeg";
+import secGal2 from "@/assets/Secondary School 2.jpeg";
+import secGal3 from "@/assets/Secondary School 3.jpeg";
+import secGal4 from "@/assets/Secondary School 5.jpeg";
+import secGal5 from "@/assets/Secondary School 6.jpeg";
+import secGal6 from "@/assets/Secondary School 7.jpeg";
 import { FlaskConical, Globe, Code, Calculator } from "lucide-react";
 
 const programmes = [
@@ -128,6 +134,36 @@ export default function Secondary() {
                   <div className="font-display font-bold text-lg text-navy">{a.name}</div>
                   <div className="text-sm text-navy/70 mt-1">{a.award}</div>
                   <div className="mt-2 text-xs font-bold tracking-wider text-gold">{a.score}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* GALLERY */}
+      <section className="bg-cream">
+        <div className="container-page py-24">
+          <div className="eyebrow mb-3">CAMPUS LIFE</div>
+          <h2 className="display text-4xl text-navy mb-10">A day at Secondary Meclones.</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {[
+              { src: secGal1, label: "Focused learners" },
+              { src: secGal2, label: "Collaborative study" },
+              { src: secGal3, label: "Our beautiful campus" },
+              { src: secGal4, label: "Practical sessions" },
+              { src: secGal5, label: "Extracurriculars" },
+              { src: secGal6, label: "School community" },
+            ].map((img, i) => (
+              <div key={i} className="aspect-square overflow-hidden group relative">
+                <img
+                  src={img.src}
+                  alt={img.label}
+                  loading="lazy"
+                  className="w-full h-full object-cover group-hover:scale-105 transition duration-700"
+                />
+                <div className="absolute inset-0 bg-navy/40 opacity-0 group-hover:opacity-100 transition flex items-end p-4">
+                  <span className="text-white text-xs font-bold tracking-wider">{img.label}</span>
                 </div>
               </div>
             ))}
