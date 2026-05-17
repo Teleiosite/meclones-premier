@@ -5,7 +5,7 @@ import gradImg from "@/assets/graduation.jpg";
 import primaryImg from "@/assets/primary.jpg";
 import secondaryImg from "@/assets/secondary.jpg";
 import campusImg from "@/assets/Primary school logo.jpeg";
-import featuredImg from "@/assets/meclones-images.jpg";
+import featuredImg from "@/assets/slider-meclones-2.jpg";
 import { ArrowRight } from "lucide-react";
 
 const featured = {
