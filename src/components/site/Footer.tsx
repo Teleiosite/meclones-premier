@@ -36,8 +36,8 @@ export default function Footer() {
         <div>
           <div className="text-[11px] font-bold tracking-[0.25em] text-gold mb-4">CONTACT</div>
           <ul className="space-y-3 text-sm text-white/70">
-            <li className="flex gap-2.5"><MapPin size={16} className="text-gold mt-0.5 shrink-0" /> 24 Education Avenue, Lagos</li>
-            <li className="flex gap-2.5"><Phone size={16} className="text-gold mt-0.5 shrink-0" /> +234 800 000 0000</li>
+            <li className="flex gap-2.5"><MapPin size={16} className="text-gold mt-0.5 shrink-0" /> Plot 19 Road 15, Lekki Atlantic Gardens, Alabeko, Eti-Osa, Lagos</li>
+            <li className="flex gap-2.5"><Phone size={16} className="text-gold mt-0.5 shrink-0" /> 0806 024 6634</li>
             <li className="flex gap-2.5"><Mail size={16} className="text-gold mt-0.5 shrink-0" /> hello@meclones.edu</li>
           </ul>
         </div>

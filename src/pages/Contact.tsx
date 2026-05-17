@@ -52,8 +52,8 @@ export default function Contact() {
         {/* INFO */}
         <div className="lg:col-span-5 space-y-5">
           {[
-            { icon: MapPin, label: "VISIT", value: "24 Education Avenue, Lekki, Lagos" },
-            { icon: Phone, label: "CALL", value: "+234 800 000 0000" },
+            { icon: MapPin, label: "VISIT", value: "Plot 19 Road 15, Lekki Atlantic Gardens, Alabeko, Eti-Osa, Lagos" },
+            { icon: Phone, label: "CALL", value: "0806 024 6634" },
             { icon: Mail, label: "EMAIL", value: "hello@meclones.edu" },
             { icon: Clock, label: "OFFICE HOURS", value: "Mon – Fri · 8:00 – 17:00" },
           ].map((c) => (
