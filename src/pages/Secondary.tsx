@@ -141,14 +141,23 @@ export default function Secondary() {
           <div className="text-[11px] font-bold tracking-[0.3em] text-gold mb-3">SECONDARY FEES · 2026 SESSION</div>
           <h2 className="display text-4xl md:text-5xl mb-10">Invest in their future.</h2>
           <div className="bg-white/5 border border-white/10">
-            <div className="grid grid-cols-3 px-6 py-4 text-[11px] font-bold tracking-[0.2em] text-white/60 border-b border-white/10">
+            <div className="hidden md:grid grid-cols-3 px-6 py-4 text-[11px] font-bold tracking-[0.2em] text-white/60 border-b border-white/10">
               <div>CLASS</div><div>PER TERM</div><div>PER YEAR</div>
             </div>
             {fees.map((f) => (
-              <div key={f.class} className="grid grid-cols-3 px-6 py-5 border-b border-white/5 last:border-0">
-                <div className="font-medium text-sm md:text-base">{f.class}</div>
-                <div className="display text-xl text-gold">{f.term}</div>
-                <div className="display text-xl text-white">{f.year}</div>
+              <div key={f.class} className="grid md:grid-cols-3 gap-6 md:gap-4 px-6 py-6 md:py-5 border-b border-white/5 last:border-0">
+                <div>
+                  <div className="md:hidden text-[10px] font-bold tracking-[0.2em] text-white/60 mb-1.5">CLASS</div>
+                  <div className="font-medium text-lg md:text-base">{f.class}</div>
+                </div>
+                <div>
+                  <div className="md:hidden text-[10px] font-bold tracking-[0.2em] text-white/60 mb-1.5">PER TERM</div>
+                  <div className="display text-3xl md:text-xl text-gold">{f.term}</div>
+                </div>
+                <div>
+                  <div className="md:hidden text-[10px] font-bold tracking-[0.2em] text-white/60 mb-1.5">PER YEAR</div>
+                  <div className="display text-3xl md:text-xl text-white">{f.year}</div>
+                </div>
               </div>
             ))}
           </div>
