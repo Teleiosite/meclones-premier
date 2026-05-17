@@ -1,9 +1,9 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { ArrowRight, Award, BookOpen, Users, ShieldCheck } from "lucide-react";
-import heroImg from "@/assets/hero-students.jpg";
-import primaryImg from "@/assets/primary.jpg";
-import secondaryImg from "@/assets/secondary.jpg";
+import heroImg from "@/assets/School Building 3.jpeg";
+import primaryImg from "@/assets/primary School 3.jpeg";
+import secondaryImg from "@/assets/slider-meclones-2.jpg";
 import gradImg from "@/assets/graduation.jpg";
 import CTABanner from "@/components/site/CTABanner";
 
