@@ -76,7 +76,16 @@ export default function AdminParents() {
     e.preventDefault();
     setSaving(true);
 
-    const regLink = `${window.location.origin}/register?email=${encodeURIComponent(form.email)}&role=parent&name=${encodeURIComponent(form.full_name)}`;
+    const params = new URLSearchParams({
+      email: form.email,
+      role: 'parent',
+      name: form.full_name,
+      phone: form.phone,
+      address: form.address,
+      occupation: form.occupation
+    });
+    
+    const regLink = `${window.location.origin}/register?${params.toString()}`;
     
     setShowInvite({ name: form.full_name, link: regLink, email: form.email });
     setShowAdd(false);

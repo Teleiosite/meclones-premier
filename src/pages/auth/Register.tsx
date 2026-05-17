@@ -14,19 +14,46 @@ export default function Register() {
     email: searchParams.get("email") || "",
     password: "",
     role: (searchParams.get("role") as "parent" | "student" | "teacher") || "parent",
+    subject_specialization: searchParams.get("subject") || "",
+    qualification: searchParams.get("qualification") || "",
+    employee_id: searchParams.get("emp_id") || "",
+    phone: searchParams.get("phone") || "",
+    address: searchParams.get("address") || "",
+    occupation: searchParams.get("occupation") || "",
+    admission_no: searchParams.get("admission_no") || "",
+    student_class: searchParams.get("student_class") || "",
+    gender: searchParams.get("gender") || "",
   });
 
   useEffect(() => {
     const email = searchParams.get("email");
     const role = searchParams.get("role");
     const name = searchParams.get("name");
+    const subject = searchParams.get("subject");
+    const qualification = searchParams.get("qualification");
+    const emp_id = searchParams.get("emp_id");
+    const phone = searchParams.get("phone");
+    const address = searchParams.get("address");
+    const occupation = searchParams.get("occupation");
+    const admission_no = searchParams.get("admission_no");
+    const student_class = searchParams.get("student_class");
+    const gender = searchParams.get("gender");
     
-    if (email || role || name) {
+    if (email || role || name || subject || qualification || emp_id || phone || address || occupation || admission_no || student_class || gender) {
       setFormData(prev => ({
         ...prev,
         email: email || prev.email,
         role: (role as any) || prev.role,
-        fullName: name || prev.fullName
+        fullName: name || prev.fullName,
+        subject_specialization: subject || prev.subject_specialization,
+        qualification: qualification || prev.qualification,
+        employee_id: emp_id || prev.employee_id,
+        phone: phone || prev.phone,
+        address: address || prev.address,
+        occupation: occupation || prev.occupation,
+        admission_no: admission_no || prev.admission_no,
+        student_class: student_class || prev.student_class,
+        gender: gender || prev.gender,
       }));
     }
   }, [searchParams]);
@@ -44,6 +71,15 @@ export default function Register() {
           data: {
             full_name: formData.fullName,
             role: formData.role,
+            subject_specialization: formData.subject_specialization || undefined,
+            qualification: formData.qualification || undefined,
+            employee_id: formData.employee_id || undefined,
+            phone: formData.phone || undefined,
+            address: formData.address || undefined,
+            occupation: formData.occupation || undefined,
+            admission_no: formData.admission_no || undefined,
+            class: formData.student_class || undefined,
+            gender: formData.gender || undefined,
           },
         },
       });

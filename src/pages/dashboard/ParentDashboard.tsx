@@ -24,7 +24,8 @@ const nav = [
 ];
 
 export default function ParentLayout() {
-  return <DashboardLayout role="Parent" userName="Mrs. Adeyemi" userMeta="Parent / Guardian" nav={nav} />;
+  const { profile } = useAuth();
+  return <DashboardLayout role="Parent" userName={profile?.full_name || "Parent"} userMeta="Parent / Guardian" nav={nav} />;
 }
 
 export function ParentDashboard() {

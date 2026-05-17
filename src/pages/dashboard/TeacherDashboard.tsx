@@ -25,7 +25,18 @@ const nav = [
 ];
 
 export default function TeacherLayout() {
-  return <DashboardLayout role="Teacher" userName="Mr. Daniel Marko" userMeta="Mathematics Teacher" nav={nav} />;
+  const { profile, user } = useAuth();
+  const [meta, setMeta] = useState("Loading...");
+
+  useEffect(() => {
+    if (user?.id) {
+      supabase.from("teachers").select("subject_specialization").eq("profile_id", user.id).maybeSingle().then(({ data }) => {
+        setMeta(data?.subject_specialization ? `${data.subject_specialization} Teacher` : "Teacher");
+      });
+    }
+  }, [user]);
+
+  return <DashboardLayout role="Teacher" userName={profile?.full_name || "Teacher"} userMeta={meta} nav={nav} />;
 }
 
 export function TeacherDashboard() {
@@ -45,14 +56,19 @@ export function TeacherDashboard() {
       setLoading(true);
       try {
         // 1. Get Teacher Profile
-        const { data: teacher } = await supabase
+        const { data: teacher, error: teacherError } = await supabase
           .from("teachers")
           .select("id, profiles(full_name), subject_specialization")
           .eq("profile_id", user.id)
-          .single();
+          .maybeSingle();
 
-        if (!teacher) return;
-        setTeacherName(teacher.profiles?.full_name || "Teacher");
+        if (teacherError || !teacher) {
+           console.error("No teacher record found", teacherError);
+           setLoading(false);
+           return;
+        }
+        
+        setTeacherName((teacher.profiles as any)?.full_name || "Teacher");
 
         // 2. Get Classes assigned to this teacher
         const { data: ttData } = await supabase

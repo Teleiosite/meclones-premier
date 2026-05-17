@@ -31,7 +31,7 @@ export default function TeacherAttendance() {
         .from("teachers")
         .select("id")
         .eq("profile_id", user.id)
-        .single();
+        .maybeSingle();
 
       if (teacher) {
         setTeacherId(teacher.id);

@@ -15,15 +15,9 @@ type Student = {
   status: string;
 };
 
-const CLASS_OPTIONS = [
-  "Nursery 1", "Nursery 2",
-  "Primary 1", "Primary 2", "Primary 3", "Primary 4", "Primary 5", "Primary 6",
-  "JSS 1A", "JSS 1B", "JSS 2A", "JSS 2B", "JSS 3A", "JSS 3B",
-  "SS 1A", "SS 1B", "SS 2A", "SS 2B", "SS 3A", "SS 3B",
-];
-
-export default function AdminStudents() {
+const AdminStudents = () => {
   const [students, setStudents] = useState<Student[]>([]);
+  const [availableClasses, setAvailableClasses] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [classFilter, setClassFilter] = useState("All");
@@ -32,12 +26,23 @@ export default function AdminStudents() {
   const [saving, setSaving] = useState(false);
   const [viewing, setViewing] = useState<Student | null>(null);
   const [form, setForm] = useState({
-    admission_no: "", full_name: "", email: "", class: "Primary 1",
+    admission_no: "", full_name: "", email: "", class: "",
     gender: "Male",
   });
 
-  const fetchStudents = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
+
+    // Fetch dynamic classes
+    const { data: classData } = await supabase.from("classes").select("name").order("name");
+    const classList = classData ? classData.map(c => c.name) : [];
+    setAvailableClasses(classList);
+
+    // Default class in form to the first available if any
+    if (classList.length > 0) {
+      setForm(prev => ({ ...prev, class: prev.class || classList[0] }));
+    }
+
     const { data, error } = await supabase
       .from("students")
       .select(`
@@ -52,7 +57,7 @@ export default function AdminStudents() {
       .order("created_at", { ascending: false });
 
     if (error) {
-      toast.error("Failed to load students.");
+      toast.error("Failed to load data.");
       setLoading(false);
       return;
     }
@@ -72,7 +77,7 @@ export default function AdminStudents() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { fetchStudents(); }, [fetchStudents]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const filtered = students.filter((s) => {
     const matchSearch = s.full_name.toLowerCase().includes(search.toLowerCase())
@@ -86,7 +91,16 @@ export default function AdminStudents() {
     e.preventDefault();
     setSaving(true);
 
-    const regLink = `${window.location.origin}/register?email=${encodeURIComponent(form.email)}&role=student&name=${encodeURIComponent(form.full_name)}`;
+    const params = new URLSearchParams({
+      email: form.email,
+      role: 'student',
+      name: form.full_name,
+      admission_no: form.admission_no,
+      student_class: form.class,
+      gender: form.gender
+    });
+    
+    const regLink = `${window.location.origin}/register?${params.toString()}`;
     
     setShowInvite({ name: form.full_name, link: regLink, email: form.email });
     setShowAdd(false);
@@ -137,7 +151,7 @@ export default function AdminStudents() {
             className="border border-border px-3 py-2 text-xs font-bold text-navy focus:outline-none focus:border-navy bg-white"
           >
             <option value="All">ALL CLASSES</option>
-            {CLASS_OPTIONS.map((c) => <option key={c} value={c}>{c.toUpperCase()}</option>)}
+            {availableClasses.map((c) => <option key={c} value={c}>{c.toUpperCase()}</option>)}
           </select>
         </div>
       </div>
@@ -194,7 +208,7 @@ export default function AdminStudents() {
                 <div>
                   <label className="block text-[10px] font-bold text-navy/60 uppercase tracking-widest mb-1">Class</label>
                   <select value={form.class} onChange={e => setForm({...form, class: e.target.value})} className="w-full border border-border px-4 py-3 text-sm focus:border-navy outline-none bg-white">
-                    {CLASS_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+                    {availableClasses.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
                 <div>
@@ -254,7 +268,7 @@ export default function AdminStudents() {
         </div>
       )}
 
-      {/* View Modal */}
+      {/* View/Edit Modal */}
       {viewing && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setViewing(null)}>
           <div onClick={(e) => e.stopPropagation()} className="bg-white p-8 w-full max-w-md border-b-8 border-gold shadow-2xl">
@@ -262,23 +276,111 @@ export default function AdminStudents() {
               <h3 className="font-display text-2xl font-black text-navy uppercase">{viewing.full_name}</h3>
               <button onClick={() => setViewing(null)}><X size={20} /></button>
             </div>
-            <dl className="space-y-4 text-sm">
-              <div className="flex justify-between border-b border-border pb-2">
-                <dt className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">Admission No</dt>
-                <dd className="font-black text-navy">{viewing.admission_no}</dd>
+            
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              setSaving(true);
+              
+              const { error } = await supabase.from("students").update({ 
+                name: viewing.full_name,
+                admission_no: viewing.admission_no,
+                class: viewing.class,
+                gender: viewing.gender,
+                status: viewing.status
+              }).eq("id", viewing.id);
+
+              if (error) {
+                toast.error("Failed to update student details.");
+              } else {
+                // Also attempt to update the auth profiles full_name if possible (optional, but good for consistency)
+                await supabase.from("profiles").update({ full_name: viewing.full_name }).eq("id", viewing.id);
+                
+                toast.success("Student updated successfully!");
+                fetchData();
+                setViewing(null);
+              }
+              setSaving(false);
+            }}>
+              <div className="space-y-4 text-sm mb-6 max-h-[60vh] overflow-y-auto pr-2">
+                <div>
+                  <label className="block text-muted-foreground font-bold uppercase text-[10px] tracking-widest mb-1">Full Name</label>
+                  <input 
+                    required
+                    value={viewing.full_name} 
+                    onChange={e => setViewing({...viewing, full_name: e.target.value})} 
+                    className="w-full border border-border px-4 py-3 text-sm focus:border-navy outline-none bg-white font-black text-navy"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-muted-foreground font-bold uppercase text-[10px] tracking-widest mb-1">Admission No</label>
+                    <input 
+                      required
+                      value={viewing.admission_no} 
+                      onChange={e => setViewing({...viewing, admission_no: e.target.value})} 
+                      className="w-full border border-border px-4 py-3 text-sm focus:border-navy outline-none bg-white font-black text-navy font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-muted-foreground font-bold uppercase text-[10px] tracking-widest mb-1">Gender</label>
+                    <select 
+                      value={viewing.gender} 
+                      onChange={e => setViewing({...viewing, gender: e.target.value})} 
+                      className="w-full border border-border px-4 py-3 text-sm focus:border-navy outline-none bg-white font-black text-navy"
+                    >
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-muted-foreground font-bold uppercase text-[10px] tracking-widest mb-1">Assigned Class</label>
+                    <select 
+                      value={viewing.class} 
+                      onChange={e => setViewing({...viewing, class: e.target.value})} 
+                      className="w-full border border-border px-4 py-3 text-sm focus:border-navy outline-none bg-white font-black text-navy"
+                    >
+                      {availableClasses.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-muted-foreground font-bold uppercase text-[10px] tracking-widest mb-1">Status</label>
+                    <select 
+                      value={viewing.status} 
+                      onChange={e => setViewing({...viewing, status: e.target.value})} 
+                      className="w-full border border-border px-4 py-3 text-sm focus:border-navy outline-none bg-white font-black text-navy"
+                    >
+                      <option value="Active">Active</option>
+                      <option value="Suspended">Suspended</option>
+                      <option value="Graduated">Graduated</option>
+                      <option value="Left">Left</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div className="pt-2 border-t border-border mt-4">
+                  <div className="flex justify-between items-center py-2">
+                    <dt className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">Parent / Guardian</dt>
+                    <dd className="font-bold text-navy">{viewing.parent_name}</dd>
+                  </div>
+                  <div className="flex justify-between items-center py-2">
+                    <dt className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">Contact Email</dt>
+                    <dd className="font-bold text-navy">{viewing.email}</dd>
+                  </div>
+                </div>
               </div>
-              <div className="flex justify-between border-b border-border pb-2">
-                <dt className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">Current Class</dt>
-                <dd className="font-black text-navy">{viewing.class}</dd>
-              </div>
-              <div className="flex justify-between border-b border-border pb-2">
-                <dt className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">Parent / Guardian</dt>
-                <dd className="font-black text-navy">{viewing.parent_name}</dd>
-              </div>
-            </dl>
+              <button type="submit" disabled={saving} className="w-full bg-navy text-gold py-4 font-bold text-xs tracking-widest disabled:opacity-60 flex items-center justify-center gap-2 hover:bg-navy/90 transition shadow-lg">
+                {saving ? <Loader2 className="animate-spin" size={16} /> : "SAVE CHANGES"}
+              </button>
+            </form>
           </div>
         </div>
       )}
     </div>
   );
 }
+
+export default AdminStudents;

@@ -87,9 +87,16 @@ export default function AdminTeachers() {
     e.preventDefault();
     setSaving(true);
 
-    // We don't create the user here to avoid email/login issues.
-    // Instead, we generate a specialized registration link.
-    const regLink = `${window.location.origin}/register?email=${encodeURIComponent(form.email)}&role=teacher&name=${encodeURIComponent(form.full_name)}`;
+    const params = new URLSearchParams({
+      email: form.email,
+      role: 'teacher',
+      name: form.full_name,
+      subject: form.subject_specialization,
+      qualification: form.qualification,
+      emp_id: form.employee_id
+    });
+    
+    const regLink = `${window.location.origin}/register?${params.toString()}`;
     
     setShowInvite({ name: form.full_name, link: regLink });
     setShowAdd(false);

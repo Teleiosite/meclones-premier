@@ -1,6 +1,7 @@
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useState, ReactNode } from "react";
 import { Bell, ChevronDown, LogOut, Menu, X } from "lucide-react";
+import CompleteProfileModal from "./CompleteProfileModal";
 
 interface NavItem {
   to: string;
@@ -21,6 +22,8 @@ export default function DashboardLayout({ role, userName, userMeta, nav }: Props
 
   return (
     <div className="min-h-screen flex bg-cream">
+      <CompleteProfileModal role={role} />
+      
       {/* Sidebar */}
       <aside
         className={`fixed lg:sticky top-0 left-0 z-40 h-screen w-64 bg-navy text-white flex flex-col transition-transform ${

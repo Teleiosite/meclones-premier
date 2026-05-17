@@ -24,7 +24,18 @@ const nav = [
 ];
 
 export default function StudentLayout() {
-  return <DashboardLayout role="Student" userName="David Okafor" userMeta="SS 2 Student" nav={nav} />;
+  const { profile, user } = useAuth();
+  const [meta, setMeta] = useState("Loading...");
+
+  useEffect(() => {
+    if (user?.id) {
+      supabase.from("students").select("class").eq("profile_id", user.id).maybeSingle().then(({ data }) => {
+        setMeta(data?.class ? `${data.class} Student` : "Student");
+      });
+    }
+  }, [user]);
+
+  return <DashboardLayout role="Student" userName={profile?.full_name || "Student"} userMeta={meta} nav={nav} />;
 }
 
 export function StudentDashboard() {

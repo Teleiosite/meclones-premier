@@ -34,7 +34,7 @@ export default function TeacherReports() {
     if (!user) { setLoading(false); return; }
 
     const { data: teacher } = await supabase
-      .from("teachers").select("id").eq("profile_id", user.id).single();
+      .from("teachers").select("id").eq("profile_id", user.id).maybeSingle();
     if (!teacher) { setLoading(false); return; }
 
     // Get all exams for this teacher

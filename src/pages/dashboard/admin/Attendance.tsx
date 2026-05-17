@@ -11,10 +11,12 @@ import {
   Shield,
   ShieldAlert,
   Wifi,
+  Info,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { adminAttendanceService, AttendancePolicy } from "../../../services/attendanceService";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 type TabKey = "surveillance" | "anomaly" | "policy";
 
@@ -191,24 +193,66 @@ export default function AdminAttendance() {
   const clockInPolicies = ["earliest_signin", "punctuality_limit", "grace_threshold", "absence_trigger"];
   const clockOutPolicies = ["half_day_boundary", "window_authorization", "standard_shift_end"];
 
-  const getPolicyInput = (key: string) => (
-    <div key={key} className="space-y-1">
-      <div className="text-xs tracking-wider uppercase text-muted-foreground font-bold">
-        {policies.find(p => p.key === key)?.label ?? key}
+  const policyDescriptions: Record<string, string> = {
+    earliest_signin: "The earliest time a teacher is permitted to clock in for the day.",
+    punctuality_limit: "Clock-ins after this time are marked as Late.",
+    grace_threshold: "Allowed leeway in minutes before punctuality limit is strictly enforced.",
+    absence_trigger: "Clock-ins after this time are rejected or marked as Absent.",
+    half_day_boundary: "Clock-outs before this time are considered a half-day or early departure.",
+    window_authorization: "The time a teacher can clock out early with prior authorization.",
+    standard_shift_end: "The official end of the school day for teachers."
+  };
+
+  const getPolicyInput = (key: string) => {
+    const isTime = key !== "grace_threshold";
+    return (
+      <div key={key} className="space-y-1">
+        <div className="flex items-center gap-2">
+          <div className="text-xs tracking-wider uppercase text-muted-foreground font-bold">
+            {policies.find(p => p.key === key)?.label ?? key}
+          </div>
+          <Tooltip>
+            <TooltipTrigger type="button" tabIndex={-1} className="text-muted-foreground hover:text-navy transition">
+              <Info size={14} />
+            </TooltipTrigger>
+            <TooltipContent side="top" className="bg-white border border-border shadow-lg p-2.5 z-50">
+              <p className="max-w-[200px] text-xs font-bold text-center leading-relaxed text-navy">
+                {policyDescriptions[key]}
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+        <input
+          type={isTime ? "time" : "number"}
+          value={policyEdits[key] ?? ""}
+          onChange={e => setPolicyEdits(prev => ({ ...prev, [key]: e.target.value }))}
+          placeholder={isTime ? "e.g. 07:00" : "e.g. 15"}
+          className="w-full bg-white border border-border px-3 py-3 font-bold text-navy text-sm focus:outline-none focus:border-navy"
+        />
       </div>
-      <input
-        type="text"
-        value={policyEdits[key] ?? ""}
-        onChange={e => setPolicyEdits(prev => ({ ...prev, [key]: e.target.value }))}
-        placeholder="e.g. 07:00"
-        className="w-full bg-white border border-border px-3 py-3 font-bold text-navy text-sm focus:outline-none focus:border-navy"
-      />
+    );
+  };
+
+  const TooltippedLabel = ({ label, tooltip, className = "mb-2" }: { label: string, tooltip: string, className?: string }) => (
+    <div className={`flex items-center gap-2 ${className}`}>
+      <div className="text-xs tracking-wider uppercase text-muted-foreground font-bold">{label}</div>
+      <Tooltip>
+        <TooltipTrigger type="button" tabIndex={-1} className="text-muted-foreground hover:text-navy transition">
+          <Info size={14} />
+        </TooltipTrigger>
+        <TooltipContent side="top" className="bg-white border border-border shadow-lg p-2.5 z-50">
+          <p className="max-w-[200px] text-xs font-bold text-center leading-relaxed text-navy">
+            {tooltip}
+          </p>
+        </TooltipContent>
+      </Tooltip>
     </div>
   );
 
   return (
-    <div className="space-y-6">
-      <div>
+    <TooltipProvider>
+      <div className="space-y-6">
+        <div>
         <h1 className="font-display text-3xl font-black text-navy flex items-center gap-2">
           Attendance Matrix <span className="text-gold text-2xl mt-1">›</span>{" "}
           <span className="text-xl text-muted-foreground mt-1">{tabs.find(t => t.key === tab)?.label}</span>
@@ -389,7 +433,7 @@ export default function AdminAttendance() {
             <PolicyCard title="Network Isolation" icon={<Globe size={18} />} tone="blue">
               <div className="space-y-4">
                 <div>
-                  <div className="text-xs tracking-wider uppercase text-muted-foreground font-bold mb-2">Authorized IP Pool</div>
+                  <TooltippedLabel label="Authorized IP Pool" tooltip="Comma-separated list of IP addresses allowed to clock in. Leave blank to allow any IP." />
                   <div className="flex gap-2">
                     <input
                       value={policyEdits["ip_pool"] ?? ""}
@@ -408,7 +452,7 @@ export default function AdminAttendance() {
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs tracking-wider uppercase text-muted-foreground font-bold mb-2">Enforcement Protocol</div>
+                  <TooltippedLabel label="Enforcement Protocol" tooltip="Determines what happens if a teacher clocks in from an unauthorized IP." />
                   <select
                     value={policyEdits["ip_enforcement"] ?? "disabled"}
                     onChange={e => setPolicyEdits(prev => ({ ...prev, ip_enforcement: e.target.value }))}
@@ -425,7 +469,7 @@ export default function AdminAttendance() {
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <div className="text-xs tracking-wider uppercase text-muted-foreground font-bold mb-1.5">Latitude Reference</div>
+                    <TooltippedLabel label="Latitude Reference" tooltip="The geographic latitude coordinate of the school campus." className="mb-1.5" />
                     <input
                       value={policyEdits["geo_latitude"] ?? ""}
                       onChange={e => setPolicyEdits(prev => ({ ...prev, geo_latitude: e.target.value }))}
@@ -434,7 +478,7 @@ export default function AdminAttendance() {
                     />
                   </div>
                   <div>
-                    <div className="text-xs tracking-wider uppercase text-muted-foreground font-bold mb-1.5">Longitude Reference</div>
+                    <TooltippedLabel label="Longitude Reference" tooltip="The geographic longitude coordinate of the school campus." className="mb-1.5" />
                     <input
                       value={policyEdits["geo_longitude"] ?? ""}
                       onChange={e => setPolicyEdits(prev => ({ ...prev, geo_longitude: e.target.value }))}
@@ -454,7 +498,7 @@ export default function AdminAttendance() {
                 </button>
 
                 <div className="flex items-center justify-between">
-                  <div className="text-xs tracking-wider uppercase text-muted-foreground font-bold">Authorized Radius</div>
+                  <TooltippedLabel label="Authorized Radius" tooltip="Maximum allowed distance (in meters) from the campus reference point." className="mb-0" />
                   <span className="text-xs font-bold text-navy border border-border px-2 py-0.5">{policyEdits["geo_radius"] ?? "200"}m</span>
                 </div>
                 <input
@@ -465,7 +509,7 @@ export default function AdminAttendance() {
                 />
 
                 <div>
-                  <div className="text-xs tracking-wider uppercase text-muted-foreground font-bold mb-2">Accuracy Protocol</div>
+                  <TooltippedLabel label="Accuracy Protocol" tooltip="Determines what happens if a teacher clocks in outside the allowed GPS radius." />
                   <select
                     value={policyEdits["geo_enforcement"] ?? "disabled"}
                     onChange={e => setPolicyEdits(prev => ({ ...prev, geo_enforcement: e.target.value }))}
@@ -490,6 +534,7 @@ export default function AdminAttendance() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </TooltipProvider>
   );
 }

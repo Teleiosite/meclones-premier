@@ -29,7 +29,7 @@ export default function TeacherTimetable() {
       .from("teachers")
       .select("id, subject_specialization, profiles!teachers_profile_id_fkey ( full_name )")
       .eq("profile_id", user.id)
-      .single();
+      .maybeSingle();
 
     if (!teacher) {
       setLoading(false);

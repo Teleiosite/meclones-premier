@@ -23,6 +23,7 @@ type ClassItem = {
   section: string;
   students: number;
   teacher: string;
+  teacher_id: string | null;
   subjectsCount: number;
 };
 
@@ -34,18 +35,26 @@ type SubjectItem = {
   teachers: string[];
 };
 
+type TeacherOption = {
+  id: string;
+  name: string;
+};
+
 export default function AdminAcademics() {
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [subjects, setSubjects] = useState<SubjectItem[]>([]);
+  const [teachersList, setTeachersList] = useState<TeacherOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"classes" | "subjects" | "sessions">("classes");
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [editingClassId, setEditingClassId] = useState<string | null>(null);
 
   // Form states
   const [newClassName, setNewClassName] = useState("");
   const [newClassSection, setNewClassSection] = useState<"PRIMARY" | "SECONDARY">("PRIMARY");
+  const [newClassTeacher, setNewClassTeacher] = useState("");
   const [newSubjectName, setNewSubjectName] = useState("");
   const [newSubPrimary, setNewSubPrimary] = useState(true);
   const [newSubSecondary, setNewSubSecondary] = useState(false);
@@ -66,6 +75,8 @@ export default function AdminAcademics() {
         `);
 
       const { data: subjectsData } = await supabase.from("subjects").select("*");
+      
+      const { data: teachersData } = await supabase.from("teachers").select("id, profiles!teachers_profile_id_fkey ( full_name )");
 
       const mappedClasses: ClassItem[] = (classesData || []).map((c: any) => ({
         id: c.id,
@@ -73,6 +84,7 @@ export default function AdminAcademics() {
         section: c.section || "PRIMARY",
         students: c.students?.[0]?.count || 0,
         teacher: c.teachers?.profiles?.full_name || "Unassigned",
+        teacher_id: c.teacher_id || null,
         subjectsCount: 0,
       }));
 
@@ -83,9 +95,15 @@ export default function AdminAcademics() {
         secondary: s.category === "Secondary" || s.category === "Both",
         teachers: [],
       }));
+      
+      const mappedTeachers: TeacherOption[] = (teachersData || []).map((t: any) => ({
+        id: t.id,
+        name: t.profiles?.full_name || "Unknown Teacher"
+      }));
 
       setClasses(mappedClasses);
       setSubjects(mappedSubjects);
+      setTeachersList(mappedTeachers);
     } catch (err) {
       console.error("Academic Load Error:", err);
     } finally {
@@ -111,20 +129,37 @@ export default function AdminAcademics() {
     if (!newClassName.trim()) { toast.error("Please enter a class name."); return; }
     setSaving(true);
     try {
-      const { error } = await supabase.from("classes").insert({
+      const payload = {
         name: newClassName.trim(),
         section: newClassSection,
-      });
+        teacher_id: newClassTeacher || null,
+      };
+
+      const { error } = editingClassId
+        ? await supabase.from("classes").update(payload).eq("id", editingClassId)
+        : await supabase.from("classes").insert(payload);
+        
       if (error) throw error;
-      toast.success(`${newClassName} added`);
+      toast.success(editingClassId ? `${newClassName} updated` : `${newClassName} added`);
+      
       setNewClassName("");
+      setNewClassTeacher("");
+      setEditingClassId(null);
       setShowAddModal(false);
       loadData();
     } catch (err: any) {
-      toast.error(err.message || "Error adding class");
+      toast.error(err.message || "Error saving class");
     } finally {
       setSaving(false);
     }
+  };
+
+  const closeAddModal = () => {
+    setShowAddModal(false);
+    setEditingClassId(null);
+    setNewClassName("");
+    setNewClassTeacher("");
+    setNewSubjectName("");
   };
 
   const handleAddSubject = async (e: React.FormEvent) => {
@@ -169,7 +204,12 @@ export default function AdminAcademics() {
           <p className="text-muted-foreground text-sm">Manage school structure, subjects, and student progression.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button onClick={() => setShowAddModal(true)} className="flex items-center gap-2 bg-navy text-gold px-4 py-2 text-xs font-bold hover:bg-navy/90 transition shadow-sm">
+          <button onClick={() => {
+            setEditingClassId(null);
+            setNewClassName("");
+            setNewClassTeacher("");
+            setShowAddModal(true);
+          }} className="flex items-center gap-2 bg-navy text-gold px-4 py-2 text-xs font-bold hover:bg-navy/90 transition shadow-sm">
             <Plus size={16} />
             {activeTab === "classes" ? "ADD NEW CLASS" : activeTab === "subjects" ? "ADD SUBJECT" : "NEW SESSION"}
           </button>
@@ -223,9 +263,24 @@ export default function AdminAcademics() {
                         <div className="text-xs font-bold text-navy">{cls.subjectsCount} <span className="text-muted-foreground font-normal">Subjects</span></div>
                       </div>
                     </div>
-                    <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
-                      <GraduationCap size={14} />
-                      Teacher: <span className="text-navy font-bold">{cls.teacher}</span>
+                    <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <GraduationCap size={14} />
+                        Teacher: <span className="text-navy font-bold">{cls.teacher}</span>
+                      </div>
+                      <button 
+                        onClick={() => {
+                          setEditingClassId(cls.id);
+                          setNewClassName(cls.name);
+                          setNewClassSection(cls.section as any);
+                          setNewClassTeacher(cls.teacher_id || "");
+                          setActiveTab("classes");
+                          setShowAddModal(true);
+                        }}
+                        className="text-[10px] font-black text-navy hover:text-gold transition px-2 py-1 bg-secondary/50 rounded-sm"
+                      >
+                        EDIT
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -297,19 +352,31 @@ export default function AdminAcademics() {
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/80 backdrop-blur-sm p-4">
           <div className="bg-white w-full max-w-md p-6 shadow-2xl relative">
-            <button onClick={() => setShowAddModal(false)} className="absolute top-4 right-4 text-muted-foreground hover:text-navy transition"><X size={20} /></button>
+            <button type="button" onClick={closeAddModal} className="absolute top-4 right-4 text-muted-foreground hover:text-navy transition"><X size={20} /></button>
             <form onSubmit={activeTab === "classes" ? handleAddClass : handleAddSubject} className="space-y-4">
               {activeTab === "classes" ? (
                 <>
+                  <div className="mb-4">
+                    <h2 className="font-display text-xl font-black text-navy">{editingClassId ? "Edit Class" : "Add New Class"}</h2>
+                  </div>
                   <div className="space-y-1">
                     <label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">Class Name</label>
                     <input className="w-full p-3 border border-border text-sm focus:outline-none focus:border-navy font-bold text-navy" value={newClassName} onChange={(e) => setNewClassName(e.target.value)} />
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">Section</label>
-                    <select className="w-full p-3 border border-border text-sm focus:outline-none focus:border-navy font-bold text-navy" value={newClassSection} onChange={(e) => setNewClassSection(e.target.value as any)}>
+                    <select className="w-full p-3 border border-border text-sm focus:outline-none focus:border-navy font-bold text-navy bg-white" value={newClassSection} onChange={(e) => setNewClassSection(e.target.value as any)}>
                       <option value="PRIMARY">PRIMARY</option>
                       <option value="SECONDARY">SECONDARY</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">Class Teacher</label>
+                    <select className="w-full p-3 border border-border text-sm focus:outline-none focus:border-navy font-bold text-navy bg-white" value={newClassTeacher} onChange={(e) => setNewClassTeacher(e.target.value)}>
+                      <option value="">— Unassigned —</option>
+                      {teachersList.map((t) => (
+                        <option key={t.id} value={t.id}>{t.name}</option>
+                      ))}
                     </select>
                   </div>
                 </>

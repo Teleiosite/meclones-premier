@@ -31,35 +31,89 @@ export default function TeacherClasses() {
         .from("teachers")
         .select("id")
         .eq("profile_id", user.id)
-        .single();
+        .maybeSingle();
 
       if (!teacher) { setLoading(false); return; }
 
-      // Load timetable entries for this teacher (distinct classes)
-      const { data, error } = await supabase
+      // 1. Load timetable entries for this teacher
+      const { data: timetableData, error: ttError } = await supabase
         .from("timetable")
         .select("id, class_name, subject, room")
         .eq("teacher_id", teacher.id);
 
-      if (error) {
-        toast.error("Failed to load classes.");
+      if (ttError) {
+        toast.error("Failed to load timetable classes.");
         setLoading(false);
         return;
       }
 
-      // Deduplicate by class_name, get student count per class
-      const seen = new Set<string>();
-      const unique: ClassRow[] = [];
-      for (const row of (data || [])) {
-        if (!seen.has(row.class_name)) {
-          seen.add(row.class_name);
-          // Count students in this class
-          const { count } = await supabase
-            .from("students")
-            .select("*", { count: "exact", head: true })
-            .eq("class", row.class_name);
-          unique.push({ ...row, student_count: count ?? 0 });
+      // 2. Load classes where teacher is the assigned class teacher (supervisor)
+      const { data: formClassesData, error: fcError } = await supabase
+        .from("classes")
+        .select("id, name")
+        .eq("teacher_id", teacher.id);
+
+      if (fcError) {
+        toast.error("Failed to load assigned classes.");
+        setLoading(false);
+        return;
+      }
+
+      // Group and Deduplicate
+      const classMap = new Map<string, {
+        id: string;
+        class_name: string;
+        subjects: Set<string>;
+        room: string;
+      }>();
+
+      for (const row of (timetableData || [])) {
+        if (!classMap.has(row.class_name)) {
+          classMap.set(row.class_name, {
+            id: row.id,
+            class_name: row.class_name,
+            subjects: new Set([row.subject]),
+            room: row.room || "—",
+          });
+        } else {
+          const c = classMap.get(row.class_name)!;
+          c.subjects.add(row.subject);
+          if (row.room && c.room === "—") c.room = row.room;
         }
+      }
+
+      for (const row of (formClassesData || [])) {
+        if (!classMap.has(row.name)) {
+          classMap.set(row.name, {
+            id: row.id,
+            class_name: row.name,
+            subjects: new Set(["Class Teacher"]),
+            room: "—",
+          });
+        } else {
+          const c = classMap.get(row.name)!;
+          // Ensure Class Teacher is noted first
+          const newSubjects = new Set(["Class Teacher"]);
+          c.subjects.forEach(s => newSubjects.add(s));
+          c.subjects = newSubjects;
+        }
+      }
+
+      // Fetch student counts
+      const unique: ClassRow[] = [];
+      for (const [className, cData] of classMap.entries()) {
+        const { count } = await supabase
+          .from("students")
+          .select("*", { count: "exact", head: true })
+          .eq("class", className);
+          
+        unique.push({
+          id: cData.id,
+          class_name: className,
+          subject: Array.from(cData.subjects).join(" • "),
+          room: cData.room,
+          student_count: count ?? 0,
+        });
       }
 
       setClasses(unique);

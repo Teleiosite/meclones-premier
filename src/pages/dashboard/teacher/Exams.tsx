@@ -33,7 +33,7 @@ export default function TeacherExams() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setLoadingExams(false); return; }
 
-    const { data: teacher } = await supabase.from("teachers").select("id").eq("profile_id", user.id).single();
+    const { data: teacher } = await supabase.from("teachers").select("id").eq("profile_id", user.id).maybeSingle();
     if (!teacher) { setLoadingExams(false); return; }
     setTeacherId(teacher.id);
 
