@@ -17,7 +17,7 @@ const featured = {
 };
 
 const articles = [
-  { img: art1, tag: "EXCURSION", date: "OCT 2025", title: "Real-life learning takes flight: students explore the airport" },
+  { img: art1, tag: "EXCURSION", date: "OCT 2025", title: "Students experience real-life learning on an exciting airport excursion" },
   { img: art2, tag: "ACADEMIC", date: "SEP 2025", title: "Senior students engaged in interactive, modern learning" },
   { img: art3, tag: "CULTURE", date: "AUG 2025", title: "Celebrating our rich heritage and diversity during Cultural Day", imgClass: "object-top" },
   { img: art4, tag: "ARTS", date: "JUL 2025", title: "Nurturing creativity and self-expression in extracurriculars" },
