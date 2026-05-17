@@ -4,11 +4,12 @@ import classroomImg from "@/assets/classroom.jpg";
 import gradImg from "@/assets/graduation.jpg";
 import primaryImg from "@/assets/primary.jpg";
 import secondaryImg from "@/assets/secondary.jpg";
-import campusImg from "@/assets/campus.jpg";
+import campusImg from "@/assets/Primary school logo.jpeg";
+import featuredImg from "@/assets/meclones-images.jpg";
 import { ArrowRight } from "lucide-react";
 
 const featured = {
-  img: gradImg, tag: "GRADUATION", date: "JULY 2025",
+  img: featuredImg, tag: "GRADUATION", date: "JULY 2025",
   title: "Class of 2025 graduates with 100% WAEC pass rate",
   excerpt: "A record-breaking ceremony as 87 students received their certificates and university offers from across four continents.",
 };
@@ -30,6 +31,7 @@ export default function News() {
         title="What's happening at Meclones."
         subtitle="Stories, celebrations and announcements from across our campus."
         image={campusImg}
+        imageClassName="object-contain"
       />
 
       {/* FEATURED */}

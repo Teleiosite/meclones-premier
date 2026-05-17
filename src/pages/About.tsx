@@ -1,7 +1,7 @@
 import PageHero from "@/components/site/PageHero";
 import CTABanner from "@/components/site/CTABanner";
-import campusImg from "@/assets/campus.jpg";
-import classroomImg from "@/assets/classroom.jpg";
+import campusImg from "@/assets/School Building 4.jpeg";
+import classroomImg from "@/assets/School Building 1.jpeg";
 
 const milestones = [
   { year: "2003", text: "Founded with 32 students in a single building." },

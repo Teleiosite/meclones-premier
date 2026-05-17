@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import PageHero from "@/components/site/PageHero";
-import campusImg from "@/assets/campus.jpg";
+import campusImg from "@/assets/School Building 1.jpeg";
 import { Lock, ShieldCheck, CreditCard, Receipt } from "lucide-react";
 import { toast } from "sonner";
 

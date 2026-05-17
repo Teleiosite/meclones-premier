@@ -1,6 +1,6 @@
 import { useState } from "react";
 import PageHero from "@/components/site/PageHero";
-import campusImg from "@/assets/campus.jpg";
+import campusImg from "@/assets/Gallary 11.jpeg";
 import { Mail, Phone, MapPin, Clock, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";

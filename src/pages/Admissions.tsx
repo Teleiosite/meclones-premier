@@ -1,6 +1,6 @@
 import { useState } from "react";
 import PageHero from "@/components/site/PageHero";
-import heroImg from "@/assets/hero-students.jpg";
+import heroImg from "@/assets/mecangel-logo (1).png";
 import { CheckCircle2, FileText, Calendar, MessageCircle, ChevronDown, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
@@ -68,6 +68,7 @@ export default function Admissions() {
         cta={{ label: "APPLY NOW", to: "#form" }}
         secondaryCta={{ label: "BOOK A TOUR", to: "/contact" }}
         image={heroImg}
+        imageClassName="object-contain"
       />
 
       {/* STEPS */}

@@ -8,13 +8,14 @@ interface Props {
   secondaryCta?: { label: string; to: string };
   image: string;
   align?: "left" | "center";
+  imageClassName?: string;
 }
 
-export default function PageHero({ eyebrow, title, subtitle, cta, secondaryCta, image, align = "left" }: Props) {
+export default function PageHero({ eyebrow, title, subtitle, cta, secondaryCta, image, align = "left", imageClassName }: Props) {
   return (
     <section className="relative bg-navy text-white overflow-hidden">
       <div className="absolute inset-0 opacity-30">
-        <img src={image} alt="" className="w-full h-full object-cover" loading="lazy" />
+        <img src={image} alt="" className={`w-full h-full ${imageClassName || "object-cover object-center"}`} loading="lazy" />
         <div className="absolute inset-0 bg-gradient-to-r from-navy via-navy/80 to-transparent" />
       </div>
       <div className={`relative container-page py-24 md:py-32 ${align === "center" ? "text-center" : ""}`}>
