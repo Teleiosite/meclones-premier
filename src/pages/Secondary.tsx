@@ -1,7 +1,7 @@
 import PageHero from "@/components/site/PageHero";
 import CTABanner from "@/components/site/CTABanner";
-import secondaryImg from "@/assets/secondary.jpg";
-import gradImg from "@/assets/graduation.jpg";
+import secondaryImg from "@/assets/image3-scaled.jpg";
+import gradImg from "@/assets/image1-scaled.jpg";
 import { FlaskConical, Globe, Code, Calculator } from "lucide-react";
 
 const programmes = [
