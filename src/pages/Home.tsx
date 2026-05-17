@@ -67,52 +67,65 @@ export default function Home() {
 
   return (
     <>
-      {/* HERO CAROUSEL */}
-      <section className="relative bg-cream text-navy overflow-hidden">
-        {slides.map((s, i) => (
-          <div
-            key={i}
-            className={`absolute inset-0 transition-opacity duration-1000 ${i === active ? "opacity-100" : "opacity-0"}`}
-            aria-hidden={i !== active}
-          >
-            <img src={s.image} alt="" className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-r from-cream via-cream/90 to-cream/40" />
-          </div>
-        ))}
-
-        <div className="relative container-page py-24 md:py-32 flex flex-col justify-center">
-          <div className="relative">
+      {/* HERO SECTION */}
+      <section className="relative bg-cream text-navy overflow-hidden border-b border-navy/5">
+        <div className="container-page py-16 md:py-24 grid lg:grid-cols-12 gap-12 items-center min-h-[600px] lg:min-h-[700px]">
+          {/* Left Column: Text Content */}
+          <div className="lg:col-span-6 relative z-10">
             {slides.map((s, i) => (
               <div
                 key={i}
-                className={`transition-opacity duration-700 ${i === active ? "opacity-100 relative" : "opacity-0 pointer-events-none absolute inset-0"}`}
+                className={`transition-all duration-700 ${
+                  i === active 
+                    ? "opacity-100 relative translate-y-0" 
+                    : "opacity-0 pointer-events-none absolute inset-0 translate-y-4"
+                }`}
               >
-                <div className="eyebrow mb-5">{s.eyebrow}</div>
-                <h1 className="display text-5xl md:text-7xl text-navy max-w-3xl leading-[0.95]">
+                <div className="eyebrow mb-4 text-navy/60">{s.eyebrow}</div>
+                <h1 className="display text-4xl sm:text-5xl md:text-6xl text-navy leading-[1.05] tracking-tight">
                   {s.titleStart}<span className="text-gold">{s.titleAccent}</span>
                 </h1>
-                <p className="mt-6 text-lg text-navy/70 max-w-xl">{s.subtitle}</p>
-                <div className="mt-10 flex flex-wrap gap-3">
-                  <Link to={s.cta.to} className="bg-gold text-navy px-7 py-4 font-bold text-sm tracking-wider hover:bg-gold/90 transition inline-flex items-center gap-2">
-                    {s.cta.label} <ArrowRight size={16} />
+                <p className="mt-5 text-base md:text-lg text-navy/70 leading-relaxed max-w-xl">{s.subtitle}</p>
+                <div className="mt-8 flex flex-wrap gap-3">
+                  <Link to={s.cta.to} className="bg-gold text-navy px-7 py-4 font-bold text-xs tracking-widest hover:bg-gold/90 transition inline-flex items-center gap-2">
+                    {s.cta.label} <ArrowRight size={14} />
                   </Link>
-                  <Link to={s.secondaryCta.to} className="border-2 border-navy text-navy px-7 py-4 font-bold text-sm tracking-wider hover:bg-navy hover:text-white transition">
+                  <Link to={s.secondaryCta.to} className="border-2 border-navy text-navy px-7 py-4 font-bold text-xs tracking-widest hover:bg-navy hover:text-white transition">
                     {s.secondaryCta.label}
                   </Link>
                 </div>
               </div>
             ))}
+
+            {/* Slide Indicators */}
+            <div className="flex gap-2 mt-10">
+              {slides.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setActive(i)}
+                  aria-label={`Slide ${i + 1}`}
+                  className={`h-1.5 transition-all ${i === active ? "w-10 bg-navy" : "w-5 bg-navy/30"}`}
+                />
+              ))}
+            </div>
           </div>
 
-          <div className="mt-10 flex gap-2">
-            {slides.map((_, i) => (
-              <button
+          {/* Right Column: Slide Images (Full Width, Premium Aspect Ratio) */}
+          <div className="lg:col-span-6 relative w-full aspect-[4/3] sm:aspect-[16/10] lg:aspect-[4/3] bg-navy overflow-hidden shadow-xl border border-navy/5">
+            {slides.map((s, i) => (
+              <img
                 key={i}
-                onClick={() => setActive(i)}
-                aria-label={`Slide ${i + 1}`}
-                className={`h-1.5 transition-all ${i === active ? "w-10 bg-navy" : "w-5 bg-navy/30"}`}
+                src={s.image}
+                alt=""
+                className={`absolute inset-0 w-full h-full object-cover transition-all duration-1000 ${
+                  i === active 
+                    ? "opacity-100 scale-100" 
+                    : "opacity-0 scale-105 pointer-events-none"
+                }`}
               />
             ))}
+            {/* Subtle elegant navy shadow transition overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-navy/20 via-transparent to-transparent pointer-events-none" />
           </div>
         </div>
       </section>
