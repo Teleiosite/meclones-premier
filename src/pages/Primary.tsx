@@ -2,6 +2,7 @@ import PageHero from "@/components/site/PageHero";
 import CTABanner from "@/components/site/CTABanner";
 import primaryImg from "@/assets/primary School 4.jpeg";
 import classroomImg from "@/assets/classroom.jpg";
+import beyondImg from "@/assets/meclones-images2.jpg";
 import campusImg from "@/assets/campus.jpg";
 import gradImg from "@/assets/graduation.jpg";
 import secondaryImg from "@/assets/secondary.jpg";
@@ -95,7 +96,7 @@ export default function Primary() {
       <section className="container-page py-24">
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <div className="aspect-[4/5] overflow-hidden order-2 md:order-1">
-            <img src={classroomImg} alt="Primary classroom" loading="lazy" className="w-full h-full object-cover" />
+            <img src={beyondImg} alt="Primary classroom" loading="lazy" className="w-full h-full object-cover" />
           </div>
           <div className="order-1 md:order-2">
             <div className="eyebrow mb-3">BEYOND ACADEMICS</div>
