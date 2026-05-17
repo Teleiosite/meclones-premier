@@ -39,9 +39,17 @@ export default function TeacherAttendance() {
         const { data: tt } = await supabase
           .from("timetable")
           .select("class_name")
-          .eq("teacher_id", teacher.id);
+          .eq("teacher_id", user.id);
+        const timetableClasses = (tt || []).map((t: any) => t.class_name as string).filter(Boolean);
 
-        const uniqueClasses = [...new Set((tt || []).map((t: any) => t.class_name as string).filter(Boolean))] as string[];
+        // Fetch classes where this teacher is the Form Teacher
+        const { data: formClasses } = await supabase
+          .from("classes")
+          .select("name")
+          .eq("teacher_id", teacher.id);
+        const formClassNames = (formClasses || []).map((c: any) => c.name as string).filter(Boolean);
+
+        const uniqueClasses = [...new Set([...timetableClasses, ...formClassNames])];
         setClasses(uniqueClasses);
         if (uniqueClasses.length > 0) setSelectedClass(uniqueClasses[0]);
       }
@@ -55,7 +63,7 @@ export default function TeacherAttendance() {
     setLoadingStudents(true);
     const { data } = await supabase
       .from("students")
-      .select("id, profiles!students_profile_id_fkey(full_name)")
+      .select("id, profiles(full_name)")
       .eq("class", selectedClass)
       .eq("status", "Active");
 

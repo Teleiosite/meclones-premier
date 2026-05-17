@@ -43,7 +43,7 @@ export default function ParentResults() {
     // Get children
     const { data: studentRows } = await supabase
       .from("students")
-      .select("id, class, profiles!students_profile_id_fkey ( full_name )")
+      .select("id, class, profiles ( full_name )")
       .eq("parent_id", parent.id);
 
     if (!studentRows || studentRows.length === 0) { setLoading(false); return; }

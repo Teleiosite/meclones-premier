@@ -45,7 +45,7 @@ export default function StudentResults() {
         id, score, grade, remarks,
         exams (
           title, subject,
-          teachers ( profiles!teachers_profile_id_fkey ( full_name ) )
+          teachers ( profiles ( full_name ) )
         )
       `)
       .eq("student_id", student.id)

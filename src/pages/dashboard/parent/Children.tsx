@@ -41,7 +41,7 @@ export default function ParentChildren() {
       .from("students")
       .select(`
         id, admission_no, class, status,
-        profiles!students_profile_id_fkey ( full_name, id )
+        profiles ( full_name, id )
       `)
       .eq("parent_id", parent.id)
       .eq("status", "Active");

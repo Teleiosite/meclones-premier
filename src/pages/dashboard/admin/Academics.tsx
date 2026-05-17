@@ -70,13 +70,13 @@ export default function AdminAcademics() {
         .from("classes")
         .select(`
           *,
-          teachers!classes_teacher_id_fkey ( profiles!teachers_profile_id_fkey ( full_name ) ),
+          teachers ( profiles ( full_name ) ),
           students ( count )
         `);
 
       const { data: subjectsData } = await supabase.from("subjects").select("*");
       
-      const { data: teachersData } = await supabase.from("teachers").select("id, profiles!teachers_profile_id_fkey ( full_name )");
+      const { data: teachersData } = await supabase.from("teachers").select("id, profiles ( full_name )");
 
       const mappedClasses: ClassItem[] = (classesData || []).map((c: any) => ({
         id: c.id,

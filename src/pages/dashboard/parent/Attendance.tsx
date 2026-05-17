@@ -47,7 +47,7 @@ export default function ParentAttendance() {
     // Get children
     const { data: children } = await supabase
       .from("students")
-      .select("id, profiles!students_profile_id_fkey ( full_name )")
+      .select("id, profiles ( full_name )")
       .eq("parent_id", parent.id);
 
     if (!children || children.length === 0) { setLoading(false); return; }

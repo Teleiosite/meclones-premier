@@ -19,6 +19,11 @@ export default function TeacherTimetable() {
   const [schedule, setSchedule] = useState<WeeklySchedule>({});
   const [loading, setLoading] = useState(true);
   const [teacherProfile, setTeacherProfile] = useState<{ name: string; subject: string } | null>(null);
+  
+  // Filter states
+  const [selectedClass, setSelectedClass] = useState("All");
+  const [classesList, setClassesList] = useState<string[]>([]);
+  const [academicSetting, setAcademicSetting] = useState<{ session: string; term: string } | null>(null);
 
   const fetchTimetable = useCallback(async () => {
     if (!user) return;
@@ -27,7 +32,7 @@ export default function TeacherTimetable() {
     // 1. Get teacher's internal ID
     const { data: teacher } = await supabase
       .from("teachers")
-      .select("id, subject_specialization, profiles!teachers_profile_id_fkey ( full_name )")
+      .select("id, subject_specialization, profiles ( full_name )")
       .eq("profile_id", user.id)
       .maybeSingle();
 
@@ -41,11 +46,11 @@ export default function TeacherTimetable() {
       subject: teacher.subject_specialization ?? "General",
     });
 
-    // 2. Load timetable where teacher_id matches
+    // 2. Load timetable where teacher_id matches logged in profile_id
     const { data } = await supabase
       .from("timetable")
       .select("time_slot, day, subject, class_name, room, color")
-      .eq("teacher_id", teacher.id);
+      .eq("teacher_id", user.id);
 
     const newSchedule: WeeklySchedule = {};
     for (const t of TIMES) {
@@ -64,6 +69,28 @@ export default function TeacherTimetable() {
       }
     });
 
+    // Extract all unique class names for the filter dropdown
+    const uniqueClassNames = Array.from(
+      new Set(
+        (data || []).map((row: any) => row.class_name as string).filter(Boolean)
+      )
+    ).sort();
+    
+    // 3. Fetch school settings (Term and Session)
+    const { data: settings } = await supabase
+      .from("school_settings")
+      .select("session, term")
+      .eq("id", "current")
+      .maybeSingle();
+
+    if (settings) {
+      setAcademicSetting({
+        session: settings.session,
+        term: settings.term,
+      });
+    }
+    
+    setClassesList(uniqueClassNames);
     setSchedule(newSchedule);
     setLoading(false);
   }, [user]);
@@ -81,33 +108,45 @@ export default function TeacherTimetable() {
   }
 
   // Count stats
-  const totalPeriods = TIMES.filter(t => t !== "12:00").length * DAYS.length;
-  const assignedPeriods = TIMES.filter(t => t !== "12:00").reduce((acc, t) =>
+  const assignedPeriods = TIMES.reduce((acc, t) =>
     acc + DAYS.filter(d => !!schedule[t]?.[d]).length, 0);
-  const uniqueClasses = new Set(
-    TIMES.flatMap(t => DAYS.map(d => schedule[t]?.[d]?.className)).filter(Boolean)
-  ).size;
+  const uniqueClasses = classesList.length;
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-        <div>
-          <h1 className="font-display text-3xl font-black text-navy">My Timetable</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">
-            {teacherProfile?.name} · {teacherProfile?.subject} — Term 2, 2026
-          </p>
+      <div>
+        <h1 className="font-display text-3xl font-black text-navy">My Timetable</h1>
+        <p className="text-muted-foreground text-sm mt-0.5">
+          {teacherProfile?.name} · {teacherProfile?.subject} {academicSetting ? `— ${academicSetting.term}, ${academicSetting.session}` : ""}
+        </p>
+      </div>
+
+      {/* Filter and stats row */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-border p-4">
+        <div className="flex items-center gap-3">
+          <label className="text-xs font-bold text-navy uppercase tracking-wider whitespace-nowrap">Filter by Class:</label>
+          <select
+            value={selectedClass}
+            onChange={(e) => setSelectedClass(e.target.value)}
+            className="border border-border px-3 py-1.5 text-xs text-navy focus:border-navy focus:outline-none bg-white font-semibold"
+          >
+            <option value="All">All Classes ({uniqueClasses})</option>
+            {classesList.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
         </div>
 
         {/* Quick stats */}
         <div className="flex gap-3">
-          <div className="bg-white border border-border rounded-lg px-4 py-2.5 text-center min-w-[80px]">
-            <div className="font-black text-xl text-navy">{assignedPeriods}</div>
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Periods/wk</div>
+          <div className="bg-secondary/40 border border-border rounded px-4 py-1.5 text-center min-w-[100px]">
+            <div className="font-black text-lg text-navy">{assignedPeriods}</div>
+            <div className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold">Periods/wk</div>
           </div>
-          <div className="bg-white border border-border rounded-lg px-4 py-2.5 text-center min-w-[80px]">
-            <div className="font-black text-xl text-navy">{uniqueClasses}</div>
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Classes</div>
+          <div className="bg-secondary/40 border border-border rounded px-4 py-1.5 text-center min-w-[100px]">
+            <div className="font-black text-lg text-navy">{uniqueClasses}</div>
+            <div className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold font-display">Classes</div>
           </div>
         </div>
       </div>
@@ -128,16 +167,14 @@ export default function TeacherTimetable() {
               <tr key={t} className="hover:bg-secondary/10 transition">
                 <td className="px-4 py-2 font-mono text-xs text-muted-foreground font-bold whitespace-nowrap">{t}</td>
                 {DAYS.map((d) => {
-                  const slot = schedule[t]?.[d];
-                  const isBreak = t === "12:00";
+                  const rawSlot = schedule[t]?.[d];
+                  // Filter out slots that do not match the selected class (unless selectedClass === "All")
+                  const slot = (rawSlot && (selectedClass === "All" || rawSlot.className === selectedClass)) ? rawSlot : null;
+                  
                   return (
                     <td key={d} className="px-1.5 py-1.5 text-center">
-                      {isBreak ? (
-                        <div className="bg-secondary text-muted-foreground text-[10px] font-bold px-2 py-3 rounded">
-                          LUNCH
-                        </div>
-                      ) : slot ? (
-                        <div className={`${slot.color} text-white px-2 py-2 rounded text-left`}>
+                      {slot ? (
+                        <div className={`${slot.color} text-white px-2 py-2 rounded text-left shadow-sm`}>
                           <div className="text-[11px] font-bold leading-tight truncate">{slot.subject}</div>
                           <div className="text-[10px] opacity-80 font-semibold mt-0.5">{slot.className}</div>
                           <div className="text-[10px] opacity-60 mt-0.5">{slot.room}</div>

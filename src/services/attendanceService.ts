@@ -102,7 +102,7 @@ export const adminAttendanceService = {
   async getTeacherAttendanceByDate(date: string): Promise<any[]> {
     const { data: teachers, error: tErr } = await supabase
       .from('teachers')
-      .select('id, subject_specialization, status, profiles!teachers_profile_id_fkey(full_name)')
+      .select('id, subject_specialization, status, profiles(full_name)')
       .eq('status', 'Active');
 
     if (tErr) throw new Error(`Failed to load teachers: ${tErr.message}`);

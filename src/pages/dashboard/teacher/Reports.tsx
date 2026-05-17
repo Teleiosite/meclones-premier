@@ -39,13 +39,22 @@ export default function TeacherReports() {
 
     // Get all exams for this teacher
     const { data: exams } = await supabase
-      .from("exams").select("id, class_name").eq("teacher_id", teacher.id);
+      .from("exams").select("id, class").eq("teacher_id", teacher.id);
 
-    // Get all results for those exams
-    const { data: results } = await supabase
-      .from("results")
-      .select("score, grade, exam_id, student_id")
-      .eq("teacher_id", teacher.id);
+    // Build class -> exam map
+    const examClassMap: Record<string, string> = {};
+    (exams || []).forEach((e: any) => { examClassMap[e.id] = e.class; });
+
+    // Get all results for those exams safely
+    const examIds = (exams || []).map((e: any) => e.id);
+    let results: any[] = [];
+    if (examIds.length > 0) {
+      const { data: resData } = await supabase
+        .from("results")
+        .select("score, grade, exam_id, student_id")
+        .in("exam_id", examIds);
+      results = resData || [];
+    }
 
     // Get total assignments count
     const { count: assignCount } = await supabase
@@ -54,14 +63,14 @@ export default function TeacherReports() {
       .eq("teacher_id", teacher.id);
     setTotalAssignments(assignCount ?? 0);
 
-    if (!results || results.length === 0) {
+    if (results.length === 0) {
+      setClassPerf([]);
+      setTotalStudents(0);
+      setOverallAvg(0);
+      setPassRate(0);
       setLoading(false);
       return;
     }
-
-    // Build class → exam map
-    const examClassMap: Record<string, string> = {};
-    (exams || []).forEach((e: any) => { examClassMap[e.id] = e.class_name; });
 
     // Group results by class
     const classMap: Record<string, { scores: number[] }> = {};

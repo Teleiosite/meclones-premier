@@ -3,6 +3,7 @@ import { Search, Loader2, X, Users, UserCheck, UserX, Download, ChevronRight, Bo
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { downloadCSV } from "@/lib/csv";
+import { submitAttendanceBatch } from "@/lib/rpc";
 
 type Student = {
   id: string;
@@ -69,7 +70,7 @@ export default function TeacherStudents() {
       .from("students")
       .select(`
         id, admission_no, class, gender, status,
-        profiles!students_profile_id_fkey ( full_name, email ),
+        profiles ( full_name, email ),
         parents ( phone, occupation, address, profiles ( full_name, email ) )
       `)
       .in("class", allClasses)
@@ -127,17 +128,21 @@ export default function TeacherStudents() {
 
   const handleMarkAttendance = async (studentId: string, status: "Present" | "Absent" | "Late") => {
     if (!teacherId) return;
-    const { error } = await supabase.from("attendance").upsert({
-      student_id: studentId,
+    const student = students.find(s => s.id === studentId);
+    if (!student) return;
+
+    const { error } = await submitAttendanceBatch({
+      className: student.class,
       date: markingDate,
-      status,
-      marked_by: teacherId,
-    }, { onConflict: "student_id,date" });
+      records: [{ student_id: studentId, status }],
+    });
 
     if (error) {
       toast.error("Failed to mark attendance.");
+      console.error(error);
     } else {
-      toast.success(`Marked ${status} for ${students.find(s => s.id === studentId)?.full_name}`);
+      toast.success(`Marked ${status} for ${student.full_name}`);
+      load(); // Reload to refresh 30d attendance stats and state
     }
   };
 

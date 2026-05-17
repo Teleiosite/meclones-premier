@@ -49,9 +49,9 @@ export default function ParentFees() {
       .from("fees")
       .select(`
         id, term, amount, due_date, description,
-        students!fees_student_id_fkey (
+        students (
           id, class,
-          profiles!students_profile_id_fkey ( full_name )
+          profiles ( full_name )
         )
       `)
       .eq("students.parent_id", parent.id)
@@ -75,8 +75,8 @@ export default function ParentFees() {
       .select(`
         id, amount, reference, status, paid_at,
         fees ( description, term ),
-        students!payments_student_id_fkey (
-          profiles!students_profile_id_fkey ( full_name )
+        students (
+          profiles ( full_name )
         )
       `)
       .eq("students.parent_id", parent.id)

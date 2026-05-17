@@ -29,7 +29,7 @@ export default function AdminTimetable() {
   // 1. Initial Load
   useEffect(() => {
     const init = async () => {
-      const { data: tData } = await supabase.from("teachers").select("profile_id, subject_specialization, profiles!teachers_profile_id_fkey ( full_name )");
+      const { data: tData } = await supabase.from("teachers").select("profile_id, subject_specialization, profiles ( full_name )");
       setTeachers((tData || []).map((t: any) => ({
         id: t.profile_id,
         name: t.profiles?.full_name ?? "Unknown",

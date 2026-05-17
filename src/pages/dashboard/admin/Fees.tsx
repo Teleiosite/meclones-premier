@@ -176,8 +176,8 @@ export default function AdminFees() {
         id, amount, reference, status, paid_at, term,
         students!payments_student_id_fkey (
           class,
-          profiles!students_profile_id_fkey ( full_name ),
-          parents ( profiles!parents_profile_id_fkey ( full_name ) )
+          profiles ( full_name ),
+          parents ( profiles ( full_name ) )
         )
       `)
       .order("paid_at", { ascending: false })

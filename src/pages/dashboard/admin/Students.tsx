@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 
 type Student = {
   id: string;
+  profile_id?: string;
   admission_no: string;
   full_name: string;
   email: string;
@@ -47,6 +48,7 @@ const AdminStudents = () => {
       .from("students")
       .select(`
         id,
+        profile_id,
         admission_no,
         class,
         gender,
@@ -64,6 +66,7 @@ const AdminStudents = () => {
 
     const mapped: Student[] = (data || []).map((s: any) => ({
       id: s.id,
+      profile_id: s.profile_id,
       admission_no: s.admission_no,
       full_name: s.profiles?.full_name ?? "—",
       email: s.profiles?.email ?? "—",
@@ -281,20 +284,31 @@ const AdminStudents = () => {
               e.preventDefault();
               setSaving(true);
 
-              const { error } = await supabase.from("students").update({
-                full_name: viewing.full_name,
-                admission_no: viewing.admission_no,
-                class: viewing.class,
-                gender: viewing.gender,
-                status: viewing.status
-              }).eq("id", viewing.id);
+              // 1. Update full_name in public.profiles using profile_id
+              let profileError = null;
+              if (viewing.profile_id) {
+                const { error } = await supabase
+                  .from("profiles")
+                  .update({ full_name: viewing.full_name })
+                  .eq("id", viewing.profile_id);
+                profileError = error;
+              }
 
-              if (error) {
+              // 2. Update admission, class, gender, status in public.students using student's id
+              const { error: studentError } = await supabase
+                .from("students")
+                .update({
+                  admission_no: viewing.admission_no,
+                  class: viewing.class,
+                  gender: viewing.gender,
+                  status: viewing.status
+                })
+                .eq("id", viewing.id);
+
+              if (profileError || studentError) {
                 toast.error("Failed to update student details.");
+                console.error("Profile update error:", profileError, "Student update error:", studentError);
               } else {
-                // Also attempt to update the auth profiles full_name if possible (optional, but good for consistency)
-                await supabase.from("profiles").update({ full_name: viewing.full_name }).eq("id", viewing.id);
-
                 toast.success("Student updated successfully!");
                 fetchData();
                 setViewing(null);
