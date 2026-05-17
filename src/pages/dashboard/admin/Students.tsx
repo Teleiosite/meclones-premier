@@ -52,7 +52,7 @@ const AdminStudents = () => {
         gender,
         status,
         profiles ( full_name, email ),
-        parents ( profiles ( full_name ) )
+        parents ( phone, occupation, address, profiles ( full_name, email ) )
       `)
       .order("created_at", { ascending: false });
 
@@ -99,13 +99,13 @@ const AdminStudents = () => {
       student_class: form.class,
       gender: form.gender
     });
-    
+
     const regLink = `${window.location.origin}/register?${params.toString()}`;
-    
+
     setShowInvite({ name: form.full_name, link: regLink, email: form.email });
     setShowAdd(false);
     setSaving(false);
-    
+
     toast.success("Student invitation generated!");
   };
 
@@ -194,26 +194,26 @@ const AdminStudents = () => {
               <h3 className="font-display text-2xl font-black text-navy uppercase tracking-tight">Invite Student</h3>
               <button type="button" onClick={() => setShowAdd(false)}><X size={20} /></button>
             </div>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-[10px] font-bold text-navy/60 uppercase tracking-widest mb-1">Full Name</label>
-                <input required value={form.full_name} onChange={e => setForm({...form, full_name: e.target.value})} className="w-full border border-border px-4 py-3 text-sm focus:border-navy outline-none" />
+                <input required value={form.full_name} onChange={e => setForm({ ...form, full_name: e.target.value })} className="w-full border border-border px-4 py-3 text-sm focus:border-navy outline-none" />
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-navy/60 uppercase tracking-widest mb-1">Email Address</label>
-                <input required type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} className="w-full border border-border px-4 py-3 text-sm focus:border-navy outline-none" />
+                <input required type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className="w-full border border-border px-4 py-3 text-sm focus:border-navy outline-none" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[10px] font-bold text-navy/60 uppercase tracking-widest mb-1">Class</label>
-                  <select value={form.class} onChange={e => setForm({...form, class: e.target.value})} className="w-full border border-border px-4 py-3 text-sm focus:border-navy outline-none bg-white">
+                  <select value={form.class} onChange={e => setForm({ ...form, class: e.target.value })} className="w-full border border-border px-4 py-3 text-sm focus:border-navy outline-none bg-white">
                     {availableClasses.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-navy/60 uppercase tracking-widest mb-1">Admission No</label>
-                  <input required value={form.admission_no} onChange={e => setForm({...form, admission_no: e.target.value})} className="w-full border border-border px-4 py-3 text-sm focus:border-navy outline-none font-mono" />
+                  <input required value={form.admission_no} onChange={e => setForm({ ...form, admission_no: e.target.value })} className="w-full border border-border px-4 py-3 text-sm focus:border-navy outline-none font-mono" />
                 </div>
               </div>
             </div>
@@ -237,13 +237,13 @@ const AdminStudents = () => {
               <h3 className="font-display text-2xl font-black text-navy uppercase">Student Invited</h3>
               <p className="text-sm text-muted-foreground mt-2">Send this registration link to {showInvite.name} or their parent.</p>
             </div>
-            
+
             <div className="bg-secondary/50 p-4 rounded border border-dashed border-border text-xs font-mono break-all text-navy/70 select-all">
               {showInvite.link}
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <button 
+              <button
                 onClick={() => {
                   navigator.clipboard.writeText(showInvite.link);
                   toast.success("Link copied!");
@@ -252,7 +252,7 @@ const AdminStudents = () => {
               >
                 COPY LINK
               </button>
-              <button 
+              <button
                 onClick={() => {
                   const subject = encodeURIComponent("Invitation to Meclones Academy Student Portal");
                   const body = encodeURIComponent(`Hello ${showInvite.name},\n\nYou have been invited to join the Meclones Academy student portal. Please use the link below to create your account:\n\n${showInvite.link}\n\nRegards,\nSchool Administration`);
@@ -276,13 +276,13 @@ const AdminStudents = () => {
               <h3 className="font-display text-2xl font-black text-navy uppercase">{viewing.full_name}</h3>
               <button onClick={() => setViewing(null)}><X size={20} /></button>
             </div>
-            
+
             <form onSubmit={async (e) => {
               e.preventDefault();
               setSaving(true);
-              
-              const { error } = await supabase.from("students").update({ 
-                name: viewing.full_name,
+
+              const { error } = await supabase.from("students").update({
+                full_name: viewing.full_name,
                 admission_no: viewing.admission_no,
                 class: viewing.class,
                 gender: viewing.gender,
@@ -294,7 +294,7 @@ const AdminStudents = () => {
               } else {
                 // Also attempt to update the auth profiles full_name if possible (optional, but good for consistency)
                 await supabase.from("profiles").update({ full_name: viewing.full_name }).eq("id", viewing.id);
-                
+
                 toast.success("Student updated successfully!");
                 fetchData();
                 setViewing(null);
@@ -304,29 +304,29 @@ const AdminStudents = () => {
               <div className="space-y-4 text-sm mb-6 max-h-[60vh] overflow-y-auto pr-2">
                 <div>
                   <label className="block text-muted-foreground font-bold uppercase text-[10px] tracking-widest mb-1">Full Name</label>
-                  <input 
+                  <input
                     required
-                    value={viewing.full_name} 
-                    onChange={e => setViewing({...viewing, full_name: e.target.value})} 
+                    value={viewing.full_name}
+                    onChange={e => setViewing({ ...viewing, full_name: e.target.value })}
                     className="w-full border border-border px-4 py-3 text-sm focus:border-navy outline-none bg-white font-black text-navy"
                   />
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-muted-foreground font-bold uppercase text-[10px] tracking-widest mb-1">Admission No</label>
-                    <input 
+                    <input
                       required
-                      value={viewing.admission_no} 
-                      onChange={e => setViewing({...viewing, admission_no: e.target.value})} 
+                      value={viewing.admission_no}
+                      onChange={e => setViewing({ ...viewing, admission_no: e.target.value })}
                       className="w-full border border-border px-4 py-3 text-sm focus:border-navy outline-none bg-white font-black text-navy font-mono"
                     />
                   </div>
                   <div>
                     <label className="block text-muted-foreground font-bold uppercase text-[10px] tracking-widest mb-1">Gender</label>
-                    <select 
-                      value={viewing.gender} 
-                      onChange={e => setViewing({...viewing, gender: e.target.value})} 
+                    <select
+                      value={viewing.gender}
+                      onChange={e => setViewing({ ...viewing, gender: e.target.value })}
                       className="w-full border border-border px-4 py-3 text-sm focus:border-navy outline-none bg-white font-black text-navy"
                     >
                       <option value="Male">Male</option>
@@ -338,9 +338,9 @@ const AdminStudents = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-muted-foreground font-bold uppercase text-[10px] tracking-widest mb-1">Assigned Class</label>
-                    <select 
-                      value={viewing.class} 
-                      onChange={e => setViewing({...viewing, class: e.target.value})} 
+                    <select
+                      value={viewing.class}
+                      onChange={e => setViewing({ ...viewing, class: e.target.value })}
                       className="w-full border border-border px-4 py-3 text-sm focus:border-navy outline-none bg-white font-black text-navy"
                     >
                       {availableClasses.map(c => <option key={c} value={c}>{c}</option>)}
@@ -348,9 +348,9 @@ const AdminStudents = () => {
                   </div>
                   <div>
                     <label className="block text-muted-foreground font-bold uppercase text-[10px] tracking-widest mb-1">Status</label>
-                    <select 
-                      value={viewing.status} 
-                      onChange={e => setViewing({...viewing, status: e.target.value})} 
+                    <select
+                      value={viewing.status}
+                      onChange={e => setViewing({ ...viewing, status: e.target.value })}
                       className="w-full border border-border px-4 py-3 text-sm focus:border-navy outline-none bg-white font-black text-navy"
                     >
                       <option value="Active">Active</option>
@@ -360,7 +360,7 @@ const AdminStudents = () => {
                     </select>
                   </div>
                 </div>
-                
+
                 <div className="pt-2 border-t border-border mt-4">
                   <div className="flex justify-between items-center py-2">
                     <dt className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">Parent / Guardian</dt>
