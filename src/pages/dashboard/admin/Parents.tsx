@@ -240,8 +240,8 @@ export default function AdminParents() {
               </button>
               <button 
                 onClick={() => {
-                  const subject = encodeURIComponent("Invitation to Meclones Academy Parent Portal");
-                  const body = encodeURIComponent(`Hello ${showInvite.name},\n\nYou have been invited to join the Meclones Academy portal. Please use the link below to create your account:\n\n${showInvite.link}\n\nRegards,\nSchool Administration`);
+                  const subject = encodeURIComponent("Invitation to Meclones Group of Schools Parent Portal");
+                  const body = encodeURIComponent(`Hello ${showInvite.name},\n\nYou have been invited to join the Meclones Group of Schools portal. Please use the link below to create your account:\n\n${showInvite.link}\n\nRegards,\nSchool Administration`);
                   window.location.href = `mailto:${showInvite.email}?subject=${subject}&body=${body}`;
                 }}
                 className="border border-navy text-navy py-3 text-xs font-bold tracking-widest hover:bg-secondary transition"

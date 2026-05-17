@@ -23,7 +23,7 @@ export default function Navbar() {
       <div className="container-page flex items-center justify-between h-16">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="w-8 h-8 bg-gold flex items-center justify-center text-navy font-black text-sm">M</div>
-          <span className="font-bold tracking-wide text-sm">MECLONES ACADEMY</span>
+          <span className="font-bold tracking-wide text-sm">MECLONES GROUP OF SCHOOLS</span>
         </Link>
         <nav className="hidden lg:flex items-center gap-7">
           {links.map((l) => (

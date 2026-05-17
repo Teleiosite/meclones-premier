@@ -8,7 +8,7 @@ export default function Footer() {
         <div>
           <div className="flex items-center gap-2.5 mb-4">
             <div className="w-8 h-8 bg-gold flex items-center justify-center text-navy font-black text-sm">M</div>
-            <span className="font-bold tracking-wide text-sm">MECLONES ACADEMY</span>
+            <span className="font-bold tracking-wide text-sm">MECLONES GROUP OF SCHOOLS</span>
           </div>
           <p className="text-white/60 text-sm leading-relaxed">
             Two decades of nurturing brilliant minds — from Nursery through SS3.
@@ -42,7 +42,7 @@ export default function Footer() {
       </div>
       <div className="border-t border-white/10">
         <div className="container-page py-5 flex flex-col sm:flex-row justify-between gap-3 text-xs text-white/50">
-          <div>© {new Date().getFullYear()} Meclones Academy. All rights reserved.</div>
+          <div>© {new Date().getFullYear()} Meclones Group of Schools. All rights reserved.</div>
           <div>Excellence · Character · Service</div>
         </div>
       </div>

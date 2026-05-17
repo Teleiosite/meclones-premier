@@ -240,8 +240,8 @@ export default function AdminAdmissions() {
               </button>
               <button 
                 onClick={() => {
-                  const subject = encodeURIComponent("Welcome to Meclones Academy - Enrollment Approved");
-                  const body = encodeURIComponent(`Hello ${showInvite.name},\n\nYour admission application has been APPROVED. Please use the link below to set up your parent account and link your child:\n\n${showInvite.link}\n\nRegards,\nMeclones Academy Admissions`);
+                  const subject = encodeURIComponent("Welcome to Meclones Group of Schools - Enrollment Approved");
+                  const body = encodeURIComponent(`Hello ${showInvite.name},\n\nYour admission application has been APPROVED. Please use the link below to set up your parent account and link your child:\n\n${showInvite.link}\n\nRegards,\nMeclones Group of Schools Admissions`);
                   window.location.href = `mailto:${showInvite.email}?subject=${subject}&body=${body}`;
                 }}
                 className="border border-navy text-navy py-3 text-xs font-bold tracking-widest hover:bg-secondary transition"

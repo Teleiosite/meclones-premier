@@ -114,8 +114,8 @@ export default function AdminTeachers() {
 
   const sendEmail = () => {
     if (showInvite) {
-      const subject = encodeURIComponent("Invitation to join Meclones Academy Portal");
-      const body = encodeURIComponent(`Hello ${showInvite.name},\n\nYou have been invited to join the Meclones Academy portal as a Teacher. Please use the link below to set up your account:\n\n${showInvite.link}\n\nRegards,\nSchool Administration`);
+      const subject = encodeURIComponent("Invitation to join Meclones Group of Schools Portal");
+      const body = encodeURIComponent(`Hello ${showInvite.name},\n\nYou have been invited to join the Meclones Group of Schools portal as a Teacher. Please use the link below to set up your account:\n\n${showInvite.link}\n\nRegards,\nSchool Administration`);
       window.location.href = `mailto:${form.email}?subject=${subject}&body=${body}`;
     }
   };

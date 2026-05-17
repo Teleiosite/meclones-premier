@@ -34,7 +34,7 @@ export default function DashboardLayout({ role, userName, userMeta, nav }: Props
           <Link to="/" className="flex items-center gap-2.5">
             <div className="w-9 h-9 bg-gold flex items-center justify-center text-navy font-black">M</div>
             <div>
-              <div className="font-bold text-xs tracking-wide leading-tight">MECLONES ACADEMY</div>
+              <div className="font-bold text-xs tracking-wide leading-tight">MECLONES GROUP OF SCHOOLS</div>
               <div className="text-[10px] text-white/50 tracking-widest uppercase">{role} portal</div>
             </div>
           </Link>
